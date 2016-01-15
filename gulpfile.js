@@ -16,7 +16,8 @@ Managing more than one LESS/CSS is made with @imports in LESS.
 
 var pluginsScripts = [
   'bower_components/jquery/dist/jquery.js',
-  'bower_components/bootstrap/dist/js/bootstrap.js'
+  'bower_components/what-input/what-input.js',
+  'bower_components/foundation-sites/dist/foundation.js'
 ];
 var userScripts = [
   'assets/js/main.js'
@@ -33,7 +34,7 @@ make Gulp work.
 
 gulp `default` task are “lint”, “css”, “script-plugins”, “scripts”.
 gulp `dev-watch` task execute “lint” and “script-plugins” from `userScripts`
-and “less” from `assets/less/*`.
+and “sass” from `assets/scss/*`.
 
 */
 
@@ -46,19 +47,19 @@ var gulp = require('gulp');
 var autoprefixer = require('gulp-autoprefixer');
 var concat  = require('gulp-concat');
 var jshint  = require('gulp-jshint');
-var less    = require('gulp-less');
 var nano    = require('gulp-cssnano');
 var plumber = require('gulp-plumber');
 var rename  = require('gulp-rename');
+var sass    = require('gulp-sass');
 var uglify  = require('gulp-uglify');
 
 
 
-// Compile our LESS
-gulp.task('less', function() {
-  return gulp.src( 'assets/less/main.less')
+// Compile our SCSS
+gulp.task('sass', function() {
+  return gulp.src( 'assets/scss/main.scss')
     .pipe(plumber())
-    .pipe(less())
+    .pipe(sass())
     .pipe(autoprefixer({
     	browsers: ['last 3 versions'],
     	cascade: false
@@ -70,14 +71,14 @@ gulp.task('less', function() {
 
 // Prefix & Minify CSS
 /*
- * NB: If CSS task does not contain LESS operations and that you execute
- * ('less', 'css'), CSS task finish before LESS, so it does not work include
+ * NB: If CSS task does not contain SCSS operations and that you execute
+ * ('sass', 'css'), CSS task finish before SCSS, so it does not work include
  * less udpate. I do not understand why.
  */
 gulp.task('css', function () {
-  return gulp.src( 'assets/less/main.less')
+  return gulp.src( 'assets/scss/main.scss')
     .pipe(plumber())
-    .pipe(less())
+    .pipe(sass())
     .pipe(autoprefixer({
 			browsers: ['last 3 versions'],
 			cascade: false
@@ -123,7 +124,7 @@ gulp.task('scripts', function() {
 // Watch Files For Changes
 gulp.task('dev-watch', function() {
   gulp.watch( userScripts, ['lint', 'script-plugins']);
-  gulp.watch( 'assets/less/*.less', ['less']);
+  gulp.watch( 'assets/scss/*.scss', ['sass']);
 });
 
 
