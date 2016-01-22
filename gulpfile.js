@@ -58,6 +58,7 @@ var uglify  = require('gulp-uglify');
 gulp.task('less', function() {
   return gulp.src( 'assets/less/main.less')
     .pipe(plumber(errorHandler: function (err) {
+            console.log(err);
             this.emit('end');
         }
     }))))
