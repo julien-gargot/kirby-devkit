@@ -57,15 +57,16 @@ var uglify  = require('gulp-uglify');
 // Compile our LESS
 gulp.task('less', function() {
   return gulp.src( 'assets/less/main.less')
-    .pipe(plumber(errorHandler: function (err) {
+    .pipe(plumber({
+        errorHandler: function (err) {
             console.log(err);
             this.emit('end');
         }
-    }))))
+    }))
     .pipe(less())
     .pipe(autoprefixer({
-    	browsers: ['last 3 versions'],
-    	cascade: false
+      browsers: ['last 3 versions'],
+      cascade: false
     }))
     .pipe(gulp.dest('assets/css'));
 });
@@ -80,12 +81,17 @@ gulp.task('less', function() {
  */
 gulp.task('css', function () {
   return gulp.src( 'assets/less/main.less')
-    .pipe(plumber())
+    .pipe(plumber({
+        errorHandler: function (err) {
+            console.log(err);
+            this.emit('end');
+        }
+    }))
     .pipe(less())
     .pipe(autoprefixer({
-			browsers: ['last 3 versions'],
-			cascade: false
-		}))
+      browsers: ['last 3 versions'],
+      cascade: false
+    }))
     .pipe(gulp.dest('assets/css'))
     .pipe(nano({discardComments: {removeAll: true}}))
     .pipe(rename({suffix: '.min'}))
