@@ -10,7 +10,7 @@
   <!-- scripts -->
   <?php if ( c::get('environment') == 'local' ) : ?>
 
-  <?= js('assets/js/plugin.js') ?>
+  <?= js('assets/js/plugins.js') ?>
   <?= js('assets/js/main.js') ?>
 
   <?php else: ?>
