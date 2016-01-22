@@ -5,3 +5,5 @@
 /thumbs/*
 /node_modules
 /bower_components
+
+assets/fonts/*
