@@ -57,7 +57,10 @@ var uglify  = require('gulp-uglify');
 // Compile our LESS
 gulp.task('less', function() {
   return gulp.src( 'assets/less/main.less')
-    .pipe(plumber())
+    .pipe(plumber(errorHandler: function (err) {
+            this.emit('end');
+        }
+    }))))
     .pipe(less())
     .pipe(autoprefixer({
     	browsers: ['last 3 versions'],
