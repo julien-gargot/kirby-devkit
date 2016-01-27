@@ -58,7 +58,12 @@ var uglify  = require('gulp-uglify');
 // Compile our SCSS
 gulp.task('sass', function() {
   return gulp.src( 'assets/scss/main.scss')
-    .pipe(plumber())
+    .pipe(plumber({
+      errorHandler: function (err) {
+        console.log(err);
+        this.emit('end');
+      }
+    }))
     .pipe(sass())
     .pipe(autoprefixer({
     	browsers: ['last 3 versions'],
@@ -77,7 +82,12 @@ gulp.task('sass', function() {
  */
 gulp.task('css', function () {
   return gulp.src( 'assets/scss/main.scss')
-    .pipe(plumber())
+    .pipe(plumber({
+      errorHandler: function (err) {
+        console.log(err);
+        this.emit('end');
+      }
+    }))
     .pipe(sass())
     .pipe(autoprefixer({
 			browsers: ['last 3 versions'],
