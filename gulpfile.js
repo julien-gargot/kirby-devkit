@@ -57,7 +57,7 @@ var nano    = require('gulp-cssnano');
 var plumber = require('gulp-plumber');
 var rename  = require('gulp-rename');
 var uglify  = require('gulp-uglify');
-
+var browserSync = require('browser-sync').create();
 
 
 // Compile our LESS
