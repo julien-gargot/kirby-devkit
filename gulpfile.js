@@ -139,7 +139,7 @@ gulp.task('scripts', function() {
 // Watch Files For Changes
 gulp.task('dev-watch', function() {
   browserSync.init({
-    files: ['{site}/**/*.php', '*.php', userScripts, 'assets/less/*.less'],
+    files: ['{site}/**/*.php', '*.php', userScripts, 'assets/less/*.less', '!site/accounts/**'],
     proxy: localDevUrl,
   });
   gulp.watch( userScripts, ['lint', 'script-plugins']);
