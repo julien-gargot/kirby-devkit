@@ -145,7 +145,7 @@ gulp.task('dev-watch', function() {
 // Watch Files For Changes with live reload sync on every screen connect to localhost.
 gulp.task('dev-watch-sync', function() {
   browserSync.init({
-    files: ['{site}/**/*.php', '*.php', userScripts, 'assets/less/*.less'],
+    files: ['{site}/**/*.php', '*.php', userScripts, 'assets/less/*.less', '!site/accounts/**'],
     proxy: localDevUrl,
   });
   gulp.watch( userScripts, ['lint', 'script-plugins']);
