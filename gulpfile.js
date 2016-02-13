@@ -12,7 +12,7 @@ to define their order of concatenation.
 
 Managing more than one LESS/CSS is made with @imports in LESS.
 
-To enable automatic reloading on .js and .less files compilation, 
+To enable automatic reloading on .js and .less files compilation,
 as well as other niceties from [browser sync](https://www.browsersync.io/)
 write your local dev url in the localDevUrl variable.
 
@@ -138,6 +138,12 @@ gulp.task('scripts', function() {
 
 // Watch Files For Changes
 gulp.task('dev-watch', function() {
+  gulp.watch( userScripts, ['lint', 'script-plugins']);
+  gulp.watch( 'assets/less/*.less', ['less']);
+});
+
+// Watch Files For Changes with live reload sync on every screen connect to localhost.
+gulp.task('dev-watch-sync', function() {
   browserSync.init({
     files: ['{site}/**/*.php', '*.php', userScripts, 'assets/less/*.less'],
     proxy: localDevUrl,
