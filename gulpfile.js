@@ -80,25 +80,10 @@ gulp.task('less', function() {
 
 
 // Prefix & Minify CSS
-/*
- * NB: If CSS task does not contain LESS operations and that you execute
- * ('less', 'css'), CSS task finish before LESS, so it does not work include
- * less udpate. I do not understand why.
- */
-gulp.task('css', function () {
-  return gulp.src( 'assets/less/main.less')
-    .pipe(plumber({
-        errorHandler: function (err) {
-            console.log(err);
-            this.emit('end');
-        }
-    }))
-    .pipe(less())
-    .pipe(autoprefixer({
-      browsers: ['last 3 versions'],
-      cascade: false
-    }))
-    .pipe(gulp.dest('assets/css'))
+gulp.task('css', ['less'], function (done) {
+  return gulp.src([
+      'assets/css/*.css',
+    ])
     .pipe(nano({discardComments: {removeAll: true}}))
     .pipe(rename({suffix: '.min'}))
     .pipe(gulp.dest('assets/production'));
@@ -139,7 +124,7 @@ gulp.task('scripts', function() {
 // Watch Files For Changes
 gulp.task('dev-watch', function() {
   gulp.watch( userScripts, ['lint', 'script-plugins']);
-  gulp.watch( 'assets/less/*.less', ['less']);
+  gulp.watch( 'assets/less/*.less', ['less', 'css']);
 });
 
 // Watch Files For Changes with live reload sync on every screen connect to localhost.
@@ -149,7 +134,7 @@ gulp.task('dev-watch-sync', function() {
     proxy: localDevUrl,
   });
   gulp.watch( userScripts, ['lint', 'script-plugins']);
-  gulp.watch( 'assets/less/*.less', ['less']);
+  gulp.watch( 'assets/less/*.less', ['less'; 'css']);
 });
 
 
