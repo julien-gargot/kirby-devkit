@@ -10,7 +10,11 @@ their order of concatenation.
 List all the JavaScript plugin file you are using in `pluginScripts`
 to define their order of concatenation.
 
-Managing more than one LESS/CSS is made with @imports in LESS.
+Managing more than one SCSS/CSS is made with @imports in SCSS.
+
+To enable automatic reloading on .js and .scss files compilation,
+as well as other niceties from [browser sync](https://www.browsersync.io/)
+write your local dev url in the localDevUrl variable.
 
 */
 
@@ -22,6 +26,8 @@ var pluginsScripts = [
 var userScripts = [
   'assets/js/main.js'
 ];
+
+var localDevUrl = 'devkit.example.com';
 
 /*
 
@@ -45,17 +51,17 @@ var gulp = require('gulp');
 
 // Include Our Plugins
 var autoprefixer = require('gulp-autoprefixer');
-var concat  = require('gulp-concat');
-var jshint  = require('gulp-jshint');
-var nano    = require('gulp-cssnano');
-var plumber = require('gulp-plumber');
-var rename  = require('gulp-rename');
-var sass    = require('gulp-sass');
-var uglify  = require('gulp-uglify');
+var browserSync  = require('browser-sync').create();
+var concat       = require('gulp-concat');
+var jshint       = require('gulp-jshint');
+var nano         = require('gulp-cssnano');
+var plumber      = require('gulp-plumber');
+var rename       = require('gulp-rename');
+var sass         = require('gulp-sass');
+var uglify       = require('gulp-uglify');
 
 
 
-// Compile our SCSS
 gulp.task('sass', function() {
   return gulp.src( 'assets/scss/main.scss')
     .pipe(plumber({
@@ -69,31 +75,17 @@ gulp.task('sass', function() {
     	browsers: ['last 3 versions'],
     	cascade: false
     }))
-    .pipe(gulp.dest('assets/css'));
+    .pipe(gulp.dest('assets/css'))
+    .pipe(browserSync.stream());
 });
 
 
 
 // Prefix & Minify CSS
-/*
- * NB: If CSS task does not contain SCSS operations and that you execute
- * ('sass', 'css'), CSS task finish before SCSS, so it does not work include
- * less udpate. I do not understand why.
- */
-gulp.task('css', function () {
-  return gulp.src( 'assets/scss/main.scss')
-    .pipe(plumber({
-      errorHandler: function (err) {
-        console.log(err);
-        this.emit('end');
-      }
-    }))
-    .pipe(sass())
-    .pipe(autoprefixer({
-			browsers: ['last 3 versions'],
-			cascade: false
-		}))
-    .pipe(gulp.dest('assets/css'))
+gulp.task('css', ['sass'], function (done) {
+  return gulp.src([
+      'assets/css/*.css',
+    ])
     .pipe(nano({discardComments: {removeAll: true}}))
     .pipe(rename({suffix: '.min'}))
     .pipe(gulp.dest('assets/production'));
@@ -103,7 +95,7 @@ gulp.task('css', function () {
 
 // Lint Task
 gulp.task('lint', function() {
-  return gulp.src( userScripts)
+  return gulp.src(userScripts)
     .pipe(jshint())
     .pipe(jshint.reporter('default'));
 });
@@ -114,19 +106,30 @@ gulp.task('lint', function() {
 gulp.task('script-plugins', function() {
   return gulp.src(pluginsScripts)
     .pipe(concat('plugins.js'))
-    .pipe(gulp.dest('assets/js'));
+    .pipe(gulp.dest('assets/js'))
+    .pipe(browserSync.stream());
 });
 
 
 
 // Concatenate JS plugin with user scripts and minify them.
-gulp.task('scripts', function() {
+gulp.task('scripts', ['script-plugins'], function (done) {
   return gulp.src(['assets/js/plugins.js'].concat(userScripts))
     .pipe(concat('all.js'))
     .pipe(gulp.dest('assets/production'))
     .pipe(rename('all.min.js'))
     .pipe(uglify())
     .pipe(gulp.dest('assets/production'));
+});
+
+
+
+// Live reload sync on every screen connect to localhost
+gulp.task('init-live-reload', function() {
+  browserSync.init({
+    proxy: localDevUrl,
+    files: ['!site/accounts/', 'site/**/*.php', 'content/**/*.txt'],
+  });
 });
 
 
@@ -139,5 +142,15 @@ gulp.task('dev-watch', function() {
 
 
 
+// Watch Files For Changes with live reload sync on every screen connect to localhost.
+gulp.task('dev-watch-sync', ['init-live-reload', 'dev-watch']);
+
+
+
+// Production Task
+gulp.task('prod', ['lint', 'sass', 'css', 'script-plugins', 'scripts']);
+
+
+
 // Default Task
-gulp.task('default', ['lint', 'css', 'script-plugins', 'scripts']);
+gulp.task('default', ['prod']);
