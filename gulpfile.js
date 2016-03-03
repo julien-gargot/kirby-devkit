@@ -27,7 +27,7 @@ var userScripts = [
   'assets/js/main.js'
 ];
 
-var localDevUrl = 'devkit.example.com';
+var localDevUrl = '';
 
 /*
 
