@@ -27,11 +27,12 @@
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
   <![endif]-->
 
-  <meta name="og:site_name" content="<?php echo $site->ogsite_name()->html() ?>">
-  <meta name="og:description" content="<?php echo $site->description()->html() ?>">
-  <meta name="og:url" content="<?php echo $site->url() ?>">
-  <meta name="og:image" content="<?php echo $site->ogimage()->html() ?>">
-  <meta name="og:type" content="website">
+  <meta property="og:site_name" content="<?php echo $site->ogsite_name()->html() ?>">
+  <meta property="og:title" content="<?php echo $site->title()->html() ?>">
+  <meta property="og:description" content="<?php echo $site->description()->html() ?>">
+  <meta property="og:url" content="<?php echo $site->url() ?>">
+  <meta property="og:image" content="<?php echo $site->ogimage()->html() ?>">
+  <meta property="og:type" content="website">
 
   <meta name="twitter:title" content="<?php echo $site->title()->html() ?>">
   <meta name="twitter:description" content="<?php echo $site->description()->html() ?>">
