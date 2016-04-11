@@ -3,9 +3,11 @@
 title: Site
 pages: default
 fields:
-  siteSettings:
+
+  headline-a:
     label: Site Settings
     type:  headline
+
   title:
     label: Title
     type:  title
@@ -18,9 +20,11 @@ fields:
   keywords:
     label: Keywords
     type:  tags
-  socialNetworkSettings:
+
+  headline-b:
     label: Social Network Settings
     type:  headline
+
   ogimage:
     label: Site Thumbnail
     type:  url

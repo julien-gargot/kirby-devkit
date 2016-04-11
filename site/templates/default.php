@@ -1,6 +1,6 @@
 <?php snippet('header') ?>
 
-  <h1><?php echo $page->title()->html() ?></h1>
+  <h1><?php echo $page->title()->kirbytext() ?></h1>
 
   <?php echo $page->text()->kirbytext() ?>
 
