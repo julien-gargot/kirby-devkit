@@ -67,7 +67,7 @@ gulp.task('less', function() {
   return gulp.src( 'assets/less/main.less')
     .pipe(plumber({
         errorHandler: function (err) {
-          console.log(err);
+          console.log(err.formatted);
           this.emit('end');
         }
     }))
