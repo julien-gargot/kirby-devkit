@@ -66,7 +66,7 @@ gulp.task('sass', function() {
   return gulp.src( 'assets/scss/main.scss')
     .pipe(plumber({
       errorHandler: function (err) {
-        console.log(err);
+        console.log(err.formatted);
         this.emit('end');
       }
     }))
