@@ -87,7 +87,7 @@ gulp.task('css', ['less'], function (done) {
   return gulp.src([
       'assets/css/*.css',
     ])
-    .pipe(nano({discardComments: {removeAll: true}}))
+    .pipe(nano({discardComments: {removeAll: true}, autoprefixer: false}))
     .pipe(rename({suffix: '.min'}))
     .pipe(gulp.dest('assets/production'));
 });
