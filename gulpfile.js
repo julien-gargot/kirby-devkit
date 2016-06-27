@@ -10,9 +10,9 @@ their order of concatenation.
 List all the JavaScript plugin file you are using in `pluginScripts`
 to define their order of concatenation.
 
-Managing more than one LESS/CSS is made with @imports in LESS.
+Managing more than one SCSS/CSS is made with @imports in SCSS.
 
-To enable automatic reloading on .js and .less files compilation,
+To enable automatic reloading on .js and .scss files compilation,
 as well as other niceties from [browser sync](https://www.browsersync.io/)
 write your local dev url in the localDevUrl variable.
 
@@ -20,7 +20,7 @@ write your local dev url in the localDevUrl variable.
 
 var pluginsScripts = [
   'bower_components/jquery/dist/jquery.js',
-  'bower_components/bootstrap/dist/js/bootstrap.js'
+  'bower_components/foundation/js/foundation.js'
 ];
 var userScripts = [
   'assets/js/main.js'
@@ -40,21 +40,19 @@ make Gulp work.
 
 gulp `default` task are “lint”, “css”, “script-plugins”, “scripts”.
 gulp `dev-watch` task execute “lint” and “script-plugins” from `userScripts`
-and “less” from `assets/less/*`.
+and “scss” from `assets/scss/*`.
 
 */
 
 // Include gulp
 var gulp = require('gulp');
 
-
-
 // Include Our Plugins
 var autoprefixer = require('gulp-autoprefixer');
 var browserSync  = require('browser-sync').create();
 var concat       = require('gulp-concat');
 var jshint       = require('gulp-jshint');
-var less         = require('gulp-less');
+var sass         = require('gulp-sass');
 var nano         = require('gulp-cssnano');
 var plumber      = require('gulp-plumber');
 var rename       = require('gulp-rename');
@@ -62,16 +60,16 @@ var uglify       = require('gulp-uglify');
 
 
 
-// Compile our LESS
-gulp.task('less', function() {
-  return gulp.src( 'assets/less/main.less')
+// Compile our SCSS
+gulp.task('scss', function() {
+  return gulp.src( 'assets/scss/main.scss')
     .pipe(plumber({
         errorHandler: function (err) {
           console.log(err);
           this.emit('end');
         }
     }))
-    .pipe(less())
+    .pipe(sass())
     .pipe(autoprefixer({
       browsers: ['last 3 versions'],
       cascade: false
@@ -83,7 +81,7 @@ gulp.task('less', function() {
 
 
 // Prefix & Minify CSS
-gulp.task('css', ['less'], function (done) {
+gulp.task('css', ['scss'], function (done) {
   return gulp.src([
       'assets/css/*.css',
     ])
@@ -138,7 +136,7 @@ gulp.task('init-live-reload', function() {
 // Watch Files For Changes
 gulp.task('dev-watch', function() {
   gulp.watch( userScripts, ['lint', 'script-plugins']);
-  gulp.watch( 'assets/less/*.less', ['less']);
+  gulp.watch( 'assets/scss/*.scss', ['scss']);
 });
 
 
@@ -149,7 +147,7 @@ gulp.task('dev-watch-sync', ['init-live-reload', 'dev-watch']);
 
 
 // Production Task
-gulp.task('prod', ['lint', 'less', 'css', 'script-plugins', 'scripts']);
+gulp.task('prod', ['lint', 'scss', 'css', 'script-plugins', 'scripts']);
 
 
 

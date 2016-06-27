@@ -1,0 +1,20 @@
+/*!
+ *  Font Awesome 4.5.0 by @davegandy - http://fontawesome.io - @fontawesome
+ *  License - http://fontawesome.io/license (Font: SIL OFL 1.1, CSS: MIT License)
+ */
+
+$fontawesome_path : "../../bower_components/font-awesome/";
+
+@import "../../bower_components/font-awesome/scss/variables.scss";
+@import "_font-awesome.variables.scss"; //We add a new variable file to override the default values to limit the Font Awesome CSS overload.
+@import "../../bower_components/font-awesome/scss/mixins.scss";
+@import "../../bower_components/font-awesome/scss/path.scss";
+@import "../../bower_components/font-awesome/scss/core.scss";
+@import "../../bower_components/font-awesome/scss/larger.scss";
+@import "../../bower_components/font-awesome/scss/fixed-width.scss";
+@import "../../bower_components/font-awesome/scss/list.scss";
+@import "../../bower_components/font-awesome/scss/bordered-pulled.scss";
+@import "../../bower_components/font-awesome/scss/animated.scss";
+@import "../../bower_components/font-awesome/scss/rotated-flipped.scss";
+@import "../../bower_components/font-awesome/scss/stacked.scss";
+@import "../../bower_components/font-awesome/scss/icons.scss";
