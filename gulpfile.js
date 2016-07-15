@@ -129,7 +129,10 @@ gulp.task('scripts', ['script-plugins'], function (done) {
 gulp.task('init-live-reload', function() {
   browserSync.init({
     proxy: localDevUrl,
-    files: ['!site/accounts/', 'site/**/*.php', 'content/**/*.txt'],
+    notify: false,
+    snippetOptions: {
+      ignorePaths: ['panel/**', 'site/accounts/**']
+    },
   });
 });
 
