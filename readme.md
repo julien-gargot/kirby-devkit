@@ -8,27 +8,33 @@ You need NPM, Bower and GIT (for the Kirby submodules) to use this project.
 
 ## Setup a new project
 
-1. clone this repo :
+1. clone this repo:
   ```
   git clone --recursive https://github.com/julien-gargot/kirby-devkit.git path/to/your-project
   cd path/to/your-project
   ```
 
-2. install NPM and Bower :
+2. install NPM and Bower:
   ```
   npm install
   bower install
   ```
 
-3. to compile all files, for **development** and **production** :
+3. to compile all files, for **development** and **production**:
   ```
   gulp
   ```
 
-  To make it faster, while developing, you can watch for changes to CSS and JS files in the assets folder. This task only compiles **development** files.
+  To compile only necessary files for **development**, run:
+  ```
+  gulp dev
+  ```
+
+  To make it faster, while developing, you can watch for changes to your CSS and JS with:
   ```
   gulp dev-watch
   ```
+  *This task only compiles development files*.
 
   Same as `gulp dev-watch` with live reload.
   ```
@@ -38,7 +44,8 @@ You need NPM, Bower and GIT (for the Kirby submodules) to use this project.
 ## Configure with your server/site settings
 
 1. rename the file in `site/config/config.{localhost}.php` to your local development site URL [check out Multi-environment setup](http://getkirby.com/docs/advanced/options). The `environment` variable is used to load minified or unminified CSS/JS versions (checkout `snippets/header.php` and `snippets/footer.php`).
-2. to be able to use browser sync (live reloading, remote debugging, and a few other nice features), set the `localDevUrl` variable to the URL of your site at the top of `gulpfile.js`.
+2. set your *styles* and *scripts* in `assets/manifest.js`.
+2. to be able to use browser sync (live reloading, remote debugging, and a few other nice features), set the `localDevUrl` variable to the URL of your site in `assets/manifest.js`.
 
 
 ## License
