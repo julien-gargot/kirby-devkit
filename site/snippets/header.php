@@ -13,10 +13,10 @@
   <?php
     if ( c::get('environment') == 'local' ) :
       foreach ( c::get('styles') as $style):
-        echo css($style)
+        echo css($style);
       endforeach;
     else:
-      echo css('assets/production/all.min.css')
+      echo css('assets/production/all.min.css');
     endif
   ?>
 

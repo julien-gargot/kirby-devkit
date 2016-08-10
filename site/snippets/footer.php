@@ -11,10 +11,10 @@
   <?php
     if ( c::get('environment') == 'local' ) :
       foreach ( c::get('scripts') as $style):
-        echo js($style)
+        echo js($style);
       endforeach;
     else:
-      echo js('assets/production/all.min.js')
+      echo js('assets/production/all.min.js');
     endif
   ?>
 
