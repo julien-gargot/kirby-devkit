@@ -172,7 +172,14 @@ gulp.task('init-live-reload', function() {
 gulp.task('dev-watch', ['export-vars-to-kirby'], function() {
   gulp.watch( './assets/manifest.js', ['export-vars-to-kirby', 'lint', 'script-plugins', 'less']);
   gulp.watch( vars.userScripts, ['lint', 'script-plugins']);
-  gulp.watch( vars.userStyles, ['less']);
+  // watch style folders instead of files
+  var styles = vars.userStyles.map(function(path){
+    return path.replace(
+      /^((.+)\/)?((.+?)(\.[^.]*$|$))$/g,
+      "$1*"
+    );
+  }).unique();
+  gulp.watch( styles, ['less']);
 });
 
 // Watch Files For Changes with live reload sync on every screen connect to localhost.
@@ -186,3 +193,15 @@ gulp.task('prod', ['export-vars-to-kirby', 'lint', 'less', 'css', 'script-plugin
 
 // Default Task
 gulp.task('default', ['prod']);
+
+
+
+// Helpers function
+Array.prototype.unique = function() {
+  return this.reduce(function(accum, current) {
+    if (accum.indexOf(current) < 0) {
+      accum.push(current);
+    }
+    return accum;
+  }, []);
+}
