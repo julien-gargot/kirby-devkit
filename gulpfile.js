@@ -4,29 +4,10 @@
 User settings
 ---------------------------------------
 
-List all your JavaScript file in `userScripts` to define
-their order of concatenation.
-
-List all the JavaScript plugin file you are using in `pluginScripts`
-to define their order of concatenation.
-
-Managing more than one LESS/CSS is made with @imports in LESS.
-
-To enable automatic reloading on .js and .less files compilation,
-as well as other niceties from [browser sync](https://www.browsersync.io/)
-write your local dev url in the localDevUrl variable.
+User settings are set in ./assets/manifest.js
 
 */
 
-var pluginsScripts = [
-  'bower_components/jquery/dist/jquery.js',
-  'bower_components/bootstrap/dist/js/bootstrap.js'
-];
-var userScripts = [
-  'assets/js/main.js'
-];
-
-var localDevUrl = '';
 
 
 /*
@@ -38,9 +19,20 @@ Gulp definition
 By default you don’t have to configure anything to
 make Gulp work.
 
-gulp `default` task are “lint”, “css”, “script-plugins”, “scripts”.
-gulp `dev-watch` task execute “lint” and “script-plugins” from `userScripts`
-and “less” from `assets/less/*`.
+- gulp `default` is `prod`.
+
+- gulp `prod` runs everything to create all files needed in production.
+  The task performs the following instructions: “export-vars-to-kirby”, “lint”,
+  “less”, “css”, “script-plugins” and “scripts”.
+
+- gulp `dev` runs only the essentials to create all files needed for
+  development. The task performs the following instructions:
+  “export-vars-to-kirby”, “lint”, “script-plugins” and “less”.
+
+- gulp `dev-watch` task execute “export-vars-to-kirby”,
+  run “lint”, “script-plugins” and “less” watching `assets/manifest.js`,
+  run “lint” and “script-plugins” watching `userScripts` and
+  run “less” watching `userStyles`.
 
 */
 
@@ -50,9 +42,11 @@ var gulp = require('gulp');
 
 
 // Include Our Plugins
+var vars = require("./assets/manifest.js");
 var autoprefixer = require('gulp-autoprefixer');
 var browserSync  = require('browser-sync').create();
 var concat       = require('gulp-concat');
+var fs           = require('fs');
 var jshint       = require('gulp-jshint');
 var less         = require('gulp-less');
 var nano         = require('gulp-cssnano');
@@ -64,7 +58,7 @@ var uglify       = require('gulp-uglify');
 
 // Compile our LESS
 gulp.task('less', function() {
-  return gulp.src( 'assets/less/main.less')
+  return gulp.src( vars.userStyles )
     .pipe(plumber({
         errorHandler: function (err) {
           console.log(err.message);
@@ -84,9 +78,18 @@ gulp.task('less', function() {
 
 // Prefix & Minify CSS
 gulp.task('css', ['less'], function (done) {
-  return gulp.src([
-      'assets/css/*.css',
-    ])
+
+  // keep CSS order
+  var styles = vars.userStyles.map(function(path){
+    return path.replace(
+      /^((.+)\/)?((.+?)(\.[^.]*$|$))$/g,
+      "assets/css/$4.css"
+    );
+  });
+
+  return gulp.src( styles )
+    .pipe(concat('all.css'))
+    .pipe(gulp.dest('assets/production'))
     .pipe(nano({discardComments: {removeAll: true}, autoprefixer: false}))
     .pipe(rename({suffix: '.min'}))
     .pipe(gulp.dest('assets/production'));
@@ -96,7 +99,7 @@ gulp.task('css', ['less'], function (done) {
 
 // Lint Task
 gulp.task('lint', function() {
-  return gulp.src( userScripts)
+  return gulp.src( vars.userScripts )
     .pipe(jshint())
     .pipe(jshint.reporter('default'));
 });
@@ -105,7 +108,7 @@ gulp.task('lint', function() {
 
 // Concatenate JS plugin
 gulp.task('script-plugins', function() {
-  return gulp.src(pluginsScripts)
+  return gulp.src( vars.pluginScripts )
     .pipe(concat('plugins.js'))
     .pipe(gulp.dest('assets/js'))
     .pipe(browserSync.stream());
@@ -115,12 +118,39 @@ gulp.task('script-plugins', function() {
 
 // Concatenate JS plugin with user scripts and minify them.
 gulp.task('scripts', ['script-plugins'], function (done) {
-  return gulp.src(['assets/js/plugins.js'].concat(userScripts))
+  return gulp.src(['assets/js/plugins.js'].concat( vars.userScripts ))
     .pipe(concat('all.js'))
     .pipe(gulp.dest('assets/production'))
     .pipe(rename('all.min.js'))
     .pipe(uglify())
     .pipe(gulp.dest('assets/production'));
+});
+
+
+
+// Export `manifest.js` vars to PHP through a kirby plugin.
+// cf. `snippets/header` and `snippets/footer`
+gulp.task('export-vars-to-kirby', function() {
+
+  // get CSS
+  var styles = vars.userStyles.map(function(path){
+    return path.replace(
+      /^((.+)\/)?((.+?)(\.[^.]*$|$))$/g,
+      "assets/css/$4.css"
+    );
+  });
+
+  // get JS
+  var scripts = vars.pluginScripts.concat( vars.userScripts );
+
+  // Create a Kirby plugin that defines asset vars
+  var assets  = "<?php\n";
+      assets += "# Automatically generated file by Gulp for kirby-devkit; DO NOT EDIT.\n";
+      assets += "c::set('styles', " + JSON.stringify(styles) + ");\n";
+      assets += "c::set('scripts', " + JSON.stringify(scripts) + ");\n";
+
+  fs.writeFileSync('site/plugins/assets.php', assets );
+
 });
 
 
@@ -139,22 +169,20 @@ gulp.task('init-live-reload', function() {
 
 
 // Watch Files For Changes
-gulp.task('dev-watch', function() {
-  gulp.watch( userScripts, ['lint', 'script-plugins']);
-  gulp.watch( 'assets/less/*.less', ['less']);
+gulp.task('dev-watch', ['export-vars-to-kirby'], function() {
+  gulp.watch( './assets/manifest.js', ['export-vars-to-kirby', 'lint', 'script-plugins', 'less']);
+  gulp.watch( vars.userScripts, ['lint', 'script-plugins']);
+  gulp.watch( vars.userStyles, ['less']);
 });
-
-
 
 // Watch Files For Changes with live reload sync on every screen connect to localhost.
 gulp.task('dev-watch-sync', ['init-live-reload', 'dev-watch']);
 
+// Dev Task
+gulp.task('dev', ['export-vars-to-kirby', 'lint', 'script-plugins', 'less']);
 
-
-// Production Task
-gulp.task('prod', ['lint', 'less', 'css', 'script-plugins', 'scripts']);
-
-
+// Run every tasks in order to build files for production
+gulp.task('prod', ['export-vars-to-kirby', 'lint', 'less', 'css', 'script-plugins', 'scripts']);
 
 // Default Task
 gulp.task('default', ['prod']);

@@ -10,15 +10,15 @@
 
   <title><?php echo $site->title()->html() ?> | <?php echo $page->title()->html() ?></title>
 
-  <?php if ( c::get('environment') == 'local' ) : ?>
-
-  <?php echo css('assets/css/main.css') ?>
-
-  <?php else: ?>
-
-  <?php echo css('assets/production/main.min.css') ?>
-
-  <?php endif ?>
+  <?php
+    if ( c::get('environment') == 'local' ) :
+      foreach ( c::get('styles') as $style):
+        echo css($style)
+      endforeach;
+    else:
+      echo css('assets/production/all.min.css')
+    endif
+  ?>
 
   <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
   <!-- WARNING: Respond.js doesn’t work if you view the page via file:// -->

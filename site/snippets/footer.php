@@ -8,16 +8,15 @@
   </footer>
 
   <!-- scripts -->
-  <?php if ( c::get('environment') == 'local' ) : ?>
-
-  <?= js('assets/js/plugins.js') ?>
-  <?= js('assets/js/main.js') ?>
-
-  <?php else: ?>
-
-  <?= js('assets/production/all.min.js') ?>
-
-  <?php endif ?>
+  <?php
+    if ( c::get('environment') == 'local' ) :
+      foreach ( c::get('scripts') as $style):
+        echo js($style)
+      endforeach;
+    else:
+      echo js('assets/production/all.min.js')
+    endif
+  ?>
 
 </body>
 </html>
