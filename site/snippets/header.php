@@ -10,15 +10,15 @@
 
   <title><?php echo $site->title()->html() ?> | <?php echo $page->title()->html() ?></title>
 
-  <?php if ( c::get('environment') == 'local' ) : ?>
-
-  <?php echo css('assets/css/main.css') ?>
-
-  <?php else: ?>
-
-  <?php echo css('assets/production/main.min.css') ?>
-
-  <?php endif ?>
+  <?php
+    if ( c::get('environment') == 'local' ) :
+      foreach ( c::get('styles') as $style):
+        echo css($style);
+      endforeach;
+    else:
+      echo css('assets/production/all.min.css');
+    endif
+  ?>
 
   <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
   <!-- WARNING: Respond.js doesn’t work if you view the page via file:// -->
@@ -27,19 +27,19 @@
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
   <![endif]-->
 
-  <meta property="og:site_name" content="<?php echo $site->ogsite_name()->html() ?>">
-  <meta property="og:title" content="<?php echo $site->title()->html() ?>">
+  <meta property="og:site_name" content="<?php echo $site->title()->html() ?>">
+  <meta property="og:title" content="<?php echo $page->title()->html() ?>">
   <meta property="og:description" content="<?php echo $site->description()->html() ?>">
   <meta property="og:url" content="<?php echo $site->url() ?>">
   <meta property="og:image" content="<?php echo $site->ogimage()->html() ?>">
   <meta property="og:type" content="website">
 
-  <meta name="twitter:title" content="<?php echo $site->title()->html() ?>">
+  <meta name="twitter:title" content="<?php echo $page->title()->html() ?>">
   <meta name="twitter:description" content="<?php echo $site->description()->html() ?>">
   <meta name="twitter:url" content="<?php echo $site->url() ?>">
   <meta name="twitter:image" content="<?php echo $site->ogimage()->html() ?>">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:site" content="">
+  <meta name="twitter:site" content="<?php echo $site->title()->html() ?>">
   <meta name="twitter:creator" content="<?php echo $site->author()->html() ?>">
 
   <meta name="apple-mobile-web-app-capable" content="yes">
