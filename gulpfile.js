@@ -61,7 +61,7 @@ gulp.task('sass', function() {
   return gulp.src( vars.userStyles )
     .pipe(plumber({
       errorHandler: function (err) {
-        console.log(err.message);
+        console.error(err.formatted);
         this.emit('end');
       }
     }))
@@ -174,10 +174,11 @@ gulp.task('dev-watch', ['export-vars-to-kirby'], function() {
   gulp.watch( vars.userScripts, ['lint', 'script-plugins']);
   // watch style folders instead of files
   var styles = vars.userStyles.map(function(path){
-    return path.replace(
+    var response = path.replace(
       /^((.+)\/)?((.+?)(\.[^.]*$|$))$/g,
-      "$1*"
+      "$1**"
     );
+    return response;
   }).unique();
   gulp.watch( styles, ['sass']);
 });

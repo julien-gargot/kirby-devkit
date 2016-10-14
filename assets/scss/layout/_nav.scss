@@ -1,0 +1,19 @@
+.nav {
+
+  @include e(item) {
+    @extend %nav-item-base;
+    color: red;
+
+    @include m(current) {
+      @extend %nav-item-base;
+      color: blue;
+      border-bottom: 2px solid inherit;
+
+    }
+  }
+}
+
+%nav-item-base {
+  display: inline-block;
+  text-transform: uppercase;
+}

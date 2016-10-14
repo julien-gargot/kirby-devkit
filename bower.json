@@ -12,9 +12,11 @@
   },
   "license": "CC-BY-SA-4.0",
   "private": true,
+  "dependencies": {
+    "font-awesome": "*",
+  },
   "devDependencies": {
     "bootstrap": "v4-dev",
-    "font-awesome": "*",
     "jquery": "*"
   }
 }

@@ -1,0 +1,11 @@
+@mixin e($el) {
+  &__#{$el} {
+    @content;
+  }
+}
+
+@mixin m($mod) {
+  &--#{$mod} {
+    @content;
+  }
+}
