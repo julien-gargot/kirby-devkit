@@ -1,6 +1,6 @@
 {
   "name": "kirby-devkit",
-  "version": "2.3.2",
+  "version": "2.4.1",
   "description": "Kirby base installation for developers.",
   "authors": [
     "Julien Gargot",
@@ -13,7 +13,7 @@
   "license": "CC-BY-SA-4.0",
   "private": true,
   "dependencies": {
-    "font-awesome": "*",
+    "font-awesome": "*"
   },
   "devDependencies": {
     "bootstrap": "v4-dev",
