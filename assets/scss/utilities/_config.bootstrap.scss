@@ -32,6 +32,14 @@
   }
 }
 
+@mixin _assert-starts-at-zero($map) {
+  $values: map-values($map);
+  $first-value: nth($values, 1);
+  @if $first-value != 0 {
+    @warn "First breakpoint in `$grid-breakpoints` must start at 0, but starts at #{$first-value}.";
+  }
+}
+
 // General variable structure
 //
 // Variable format should follow the `$component-modifier-state-property` order.
@@ -71,20 +79,35 @@ $spacers: (
     y: 0
   ),
   1: (
+    x: ($spacer-x * .25),
+    y: ($spacer-y * .25)
+  ),
+  2: (
+    x: ($spacer-x * .5),
+    y: ($spacer-y * .5)
+  ),
+  3: (
     x: $spacer-x,
     y: $spacer-y
   ),
-  2: (
+  4: (
     x: ($spacer-x * 1.5),
     y: ($spacer-y * 1.5)
   ),
-  3: (
+  5: (
     x: ($spacer-x * 3),
     y: ($spacer-y * 3)
   )
 );
 $border-width: 1px;
 
+// This variable affects the `.h-*` and `.w-*` classes.
+$sizes: (
+  25: 25%,
+  50: 50%,
+  75: 75%,
+  100: 100%
+) !default;
 
 // Body
 //
@@ -117,6 +140,7 @@ $grid-breakpoints: (
   xl: 1200px
 );
 @include _assert-ascending($grid-breakpoints, "$grid-breakpoints");
+@include _assert-starts-at-zero($grid-breakpoints);
 
 
 // Grid containers
