@@ -27,22 +27,24 @@
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
   <![endif]-->
 
-  <meta property="og:site_name" content="<?php echo $site->title()->html() ?>">
-  <meta property="og:title" content="<?php echo $page->title()->html() ?>">
-  <meta property="og:description" content="<?php echo $site->description()->html() ?>">
-  <meta property="og:url" content="<?php echo $site->url() ?>">
-  <meta property="og:image" content="<?php echo $site->ogimage()->html() ?>">
-  <meta property="og:type" content="website">
+  <meta property="og:site_name"    content="<?php echo $site->title()->html() ?>">
+  <meta property="og:url"          content="<?php echo $page->url() ?>">
+  <meta property="og:title"        content="<?php echo $page->title()->html() ?>">
+  <meta property="og:description"  content="<?php e( $page->text()->isNotEmpty(), $page->text()->excerpt(600), $site->description()->excerpt(600)) ?>">
+  <meta property="og:type"         content="website">
+  <?php if ( $page->hasImages() && $image = $page->images()->sortBy('sort', 'asc')->first() ): ?>
+  <meta property="og:image"        content="<?php echo $image->resize(800, 800)->url() ?>">
+  <?php endif; ?>
 
-  <meta name="twitter:title" content="<?php echo $page->title()->html() ?>">
-  <meta name="twitter:description" content="<?php echo $site->description()->html() ?>">
-  <meta name="twitter:url" content="<?php echo $site->url() ?>">
-  <meta name="twitter:image" content="<?php echo $site->ogimage()->html() ?>">
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:site" content="<?php echo $site->title()->html() ?>">
-  <meta name="twitter:creator" content="<?php echo $site->author()->html() ?>">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:site"        content="<?php echo thisUrl() ?>">
+  <meta name="twitter:creator"     content="<?php echo $site->author()->html() ?>">
+  <meta name="twitter:title"       content="<?php echo $page->title()->html() ?>">
+  <meta name="twitter:description" content="<?php e( $page->text()->isNotEmpty(), $page->text()->excerpt(600), $site->description()->excerpt(600)) ?>">
+  <?php if ( $page->hasImages() && $image = $page->images()->sortBy('sort', 'asc')->first() ): ?>
+  <meta name="twitter:image"       content="<?php echo $image->resize(800, 800)->url() ?>">
+  <?php endif; ?>
 
-  <meta name="apple-mobile-web-app-capable" content="yes">
 
 </head>
 <body

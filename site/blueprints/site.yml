@@ -18,10 +18,3 @@ fields:
   keywords:
     label: Keywords
     type:  tags
-  socialNetworkSettings:
-    label: Social Network Settings
-    type:  headline
-  ogimage:
-    label: Site Thumbnail
-    type:  url
-    help:  URL of the thumbnail that will represent your website on the social networks.
