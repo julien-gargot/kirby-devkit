@@ -15,6 +15,7 @@
   "dependencies": {
     "font-awesome": "*",
     "bootstrap": "v4-dev",
-    "jquery": "*"
+    "jquery": "*",
+    "popper.js": "https://unpkg.com/popper.js"
   }
 }
