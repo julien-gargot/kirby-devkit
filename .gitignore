@@ -1,7 +1,37 @@
+# System files
+# ------------
+
+Icon
 .DS_Store
 .directory
-/site/accounts
-/assets/avatars
-/thumbs/*
+
+# Depencies files
+# ---------------
+
 /node_modules
 /bower_components
+
+# Temporary files
+# ---------------
+
+/thumbs/*
+!/thumbs/index.html
+
+/site/cache/*
+!/site/cache/index.html
+
+# -------------SECURITY-------------
+# NEVER publish these files via Git!
+# -------------SECURITY-------------
+
+# Kirby accounts
+# ---------------
+
+/site/accounts/*
+!/site/accounts/index.html
+
+# Avatars
+# ---------------
+
+/assets/avatars/*
+!/assets/avatars/index.html
