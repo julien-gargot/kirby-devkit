@@ -158,7 +158,7 @@ gulp.task('export-vars-to-kirby', function() {
 // Live reload sync on every screen connect to localhost
 gulp.task('init-live-reload', function() {
   browserSync.init({
-    proxy: localDevUrl,
+    proxy: vars.localDevUrl,
     notify: false,
     snippetOptions: {
       ignorePaths: ['panel/**', 'site/accounts/**']
