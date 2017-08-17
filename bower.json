@@ -13,7 +13,7 @@
   "license": "CC-BY-SA-4.0",
   "private": true,
   "dependencies": {
-    "bootstrap": "3.3.7",
+    "bootstrap": "*",
     "font-awesome": "*",
     "jquery": "*"
   }

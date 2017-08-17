@@ -14,6 +14,13 @@ module.exports.pluginScripts = [
   'bower_components/bootstrap/dist/js/bootstrap.js'
 ];
 
+/* List all the Styles plugin files you are using in `pluginStyles`
+ * to define their loading order.
+ */
+module.exports.pluginStyles = [
+  'bower_components/font-awesome/css/font-awesome.css'
+];
+
 /* List all your JavaScript file in `userScripts` to define
  * their order of concatenation.
  */
