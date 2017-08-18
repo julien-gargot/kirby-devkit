@@ -1,12 +1,11 @@
 // @Layout Rules: define the layout styles for all the major components of the project.
 // @example:
-//   _header.scss
-//   _footer.scss
-//   _panel.scss
-//   _grid-columns.scss
-//   _sidebar.scss
+//   "header"
+//   "footer"
+//   "sidebar"
 //   etc.
 
+@import "bootstrap";
 @import "header";
-@import "nav";
+@import "main";
 @import "footer";

@@ -4,6 +4,9 @@
  * @source: Inspired by http://sassbreak.com/writing-modular-css-with-sass/
  */
 
+ // V A R I A B L E S
+ @import "variables/index";
+
 // U T I L I T I E S
 @import "utilities/index";
 
@@ -15,9 +18,3 @@
 
 // M O D U L E S
 @import "modules/index";
-
-// S T A T E S
-@import "states/index";
-
-// T H E M E S
-// @import "themes/custom-site-theme.scss";

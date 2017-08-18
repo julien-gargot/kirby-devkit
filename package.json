@@ -1,6 +1,6 @@
 {
   "name": "kirby-devkit",
-  "version": "2.4.1",
+  "version": "2.5.4",
   "description": "Kirby base installation for developers.",
   "authors": [
     "Julien Gargot",
@@ -17,6 +17,7 @@
     "gulp": "^3.9.1",
     "gulp-autoprefixer": "^3.1.0",
     "gulp-concat": "^2.6.0",
+    "gulp-concat-css": "^2.3.0",
     "gulp-cssnano": "^2.1.1",
     "gulp-jshint": "^1.12.0",
     "gulp-plumber": "^1.1.0",

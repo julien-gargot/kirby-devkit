@@ -23,15 +23,15 @@ make Gulp work.
 
 - gulp `prod` runs everything to create all files needed in production.
   The task performs the following instructions: “export-vars-to-kirby”, “lint”,
-  “sass”, “css”, “script-plugins” and “scripts”.
+  “sass”, “css” and “scripts”.
 
 - gulp `dev` runs only the essentials to create all files needed for
   development. The task performs the following instructions:
-  “export-vars-to-kirby”, “lint”, “script-plugins” and “sass”.
+  “export-vars-to-kirby”, “lint” and “sass”.
 
 - gulp `dev-watch` task execute “export-vars-to-kirby”,
   run “lint”, “script-plugins” and “sass” watching `assets/manifest.js`,
-  run “lint” and “script-plugins” watching `userScripts` and
+  run “lint” watching `userScripts` and
   run “sass” watching `userStyles`.
 
 */
@@ -43,35 +43,36 @@ var gulp = require('gulp');
 
 // Include Our Plugins
 var vars = require("./assets/manifest.js");
-var autoprefixer = require('gulp-autoprefixer');
-var browserSync  = require('browser-sync').create();
-var concat       = require('gulp-concat');
-var fs           = require('fs');
-var jshint       = require('gulp-jshint');
-var nano         = require('gulp-cssnano');
-var plumber      = require('gulp-plumber');
-var rename       = require('gulp-rename');
-var sass         = require('gulp-sass');
-var uglify       = require('gulp-uglify');
+var gp_autoprefixer = require('gulp-autoprefixer');
+var gp_browserSync  = require('browser-sync').create();
+var gp_concat       = require('gulp-concat');
+var gp_concatCss    = require('gulp-concat-css');
+var gp_fs           = require('fs');
+var gp_jshint       = require('gulp-jshint');
+var gp_nano         = require('gulp-cssnano');
+var gp_plumber      = require('gulp-plumber');
+var gp_rename       = require('gulp-rename');
+var gp_sass         = require('gulp-sass');
+var gp_uglify       = require('gulp-uglify');
 
 
 
 // Compile our SCSS
 gulp.task('sass', function() {
   return gulp.src( vars.userStyles )
-    .pipe(plumber({
+    .pipe(gp_plumber({
       errorHandler: function (err) {
         console.error(err.formatted);
         this.emit('end');
       }
     }))
-    .pipe(sass())
-    .pipe(autoprefixer({
+    .pipe(gp_sass())
+    .pipe(gp_autoprefixer({
     	browsers: ['last 3 versions'],
     	cascade: false
     }))
     .pipe(gulp.dest('assets/css'))
-    .pipe(browserSync.stream());
+    .pipe(gp_browserSync.stream());
 });
 
 
@@ -79,19 +80,22 @@ gulp.task('sass', function() {
 // Prefix & Minify CSS
 gulp.task('css', ['sass'], function (done) {
 
-  // keep CSS order
+  // get CSS (ordered)
   var styles = vars.userStyles.map(function(path){
     return path.replace(
       /^((.+)\/)?((.+?)(\.[^.]*$|$))$/g,
       "assets/css/$4.css"
     );
   });
+  styles = vars.pluginStyles.concat( styles );
 
-  return gulp.src( styles )
-    .pipe(concat('all.css'))
+  return gulp.src( styles, { base: 'assets/production' } )
+    .pipe(gp_concatCss('all.min.css', {
+      inlineImports: false,
+      rebaseUrls: true
+    }))
     .pipe(gulp.dest('assets/production'))
-    .pipe(nano({discardComments: {removeAll: true}, autoprefixer: false}))
-    .pipe(rename({suffix: '.min'}))
+    .pipe(gp_nano({discardComments: {removeAll: true}, autoprefixer: false}))
     .pipe(gulp.dest('assets/production'));
 });
 
@@ -100,29 +104,23 @@ gulp.task('css', ['sass'], function (done) {
 // Lint Task
 gulp.task('lint', function() {
   return gulp.src( vars.userScripts )
-    .pipe(jshint())
-    .pipe(jshint.reporter('default'));
+    .pipe(gp_jshint())
+    .pipe(gp_jshint.reporter('default'));
 });
 
 
 
-// Concatenate JS plugin
-gulp.task('script-plugins', function() {
-  return gulp.src( vars.pluginScripts )
-    .pipe(concat('plugins.js'))
-    .pipe(gulp.dest('assets/js'))
-    .pipe(browserSync.stream());
-});
-
-
-
-// Concatenate JS plugin with user scripts and minify them.
-gulp.task('scripts', ['script-plugins'], function (done) {
-  return gulp.src(['assets/js/plugins.js'].concat( vars.userScripts ))
-    .pipe(concat('all.js'))
-    .pipe(gulp.dest('assets/production'))
-    .pipe(rename('all.min.js'))
-    .pipe(uglify())
+// Concatenate JS plugins with user scripts and minify them.
+gulp.task('scripts', function (done) {
+  var scripts = vars.pluginScripts.concat( vars.userScripts );
+  return gulp.src( scripts )
+    .pipe(gp_concat('all.min.js'))
+    .pipe(gp_uglify({
+      compress: {
+        drop_debugger : true,
+        drop_console : true
+      }
+    }))
     .pipe(gulp.dest('assets/production'));
 });
 
@@ -132,13 +130,14 @@ gulp.task('scripts', ['script-plugins'], function (done) {
 // cf. `snippets/header` and `snippets/footer`
 gulp.task('export-vars-to-kirby', function() {
 
-  // get CSS
+  // get CSS (ordered)
   var styles = vars.userStyles.map(function(path){
     return path.replace(
       /^((.+)\/)?((.+?)(\.[^.]*$|$))$/g,
       "assets/css/$4.css"
     );
   });
+  styles = vars.pluginStyles.concat( styles );
 
   // get JS
   var scripts = vars.pluginScripts.concat( vars.userScripts );
@@ -149,7 +148,7 @@ gulp.task('export-vars-to-kirby', function() {
       assets += "c::set('styles', " + JSON.stringify(styles) + ");\n";
       assets += "c::set('scripts', " + JSON.stringify(scripts) + ");\n";
 
-  fs.writeFileSync('site/plugins/assets.php', assets );
+  gp_fs.writeFileSync('site/plugins/assets.php', assets );
 
 });
 
@@ -157,8 +156,8 @@ gulp.task('export-vars-to-kirby', function() {
 
 // Live reload sync on every screen connect to localhost
 gulp.task('init-live-reload', function() {
-  browserSync.init({
-    proxy: localDevUrl,
+  gp_browserSync.init({
+    proxy: vars.localDevUrl,
     notify: false,
     snippetOptions: {
       ignorePaths: ['panel/**', 'site/accounts/**']
@@ -170,8 +169,8 @@ gulp.task('init-live-reload', function() {
 
 // Watch Files For Changes
 gulp.task('dev-watch', ['export-vars-to-kirby'], function() {
-  gulp.watch( './assets/manifest.js', ['export-vars-to-kirby', 'lint', 'script-plugins', 'sass']);
-  gulp.watch( vars.userScripts, ['lint', 'script-plugins']);
+  gulp.watch( './assets/manifest.js', ['export-vars-to-kirby', 'lint', 'sass']);
+  gulp.watch( vars.userScripts, ['lint']);
   // watch style folders instead of files
   var styles = vars.userStyles.map(function(path){
     var response = path.replace(
@@ -187,10 +186,10 @@ gulp.task('dev-watch', ['export-vars-to-kirby'], function() {
 gulp.task('dev-watch-sync', ['init-live-reload', 'dev-watch']);
 
 // Dev Task
-gulp.task('dev', ['export-vars-to-kirby', 'lint', 'script-plugins', 'sass']);
+gulp.task('dev', ['export-vars-to-kirby', 'lint', 'sass']);
 
 // Run every tasks in order to build files for production
-gulp.task('prod', ['export-vars-to-kirby', 'lint', 'sass', 'css', 'script-plugins', 'scripts']);
+gulp.task('prod', ['export-vars-to-kirby', 'lint', 'sass', 'css', 'scripts']);
 
 // Default Task
 gulp.task('default', ['prod']);

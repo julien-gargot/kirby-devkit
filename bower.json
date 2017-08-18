@@ -1,6 +1,6 @@
 {
   "name": "kirby-devkit",
-  "version": "2.4.1",
+  "version": "2.5.4",
   "description": "Kirby base installation for developers.",
   "authors": [
     "Julien Gargot",
@@ -14,8 +14,8 @@
   "private": true,
   "dependencies": {
     "font-awesome": "*",
-    "bootstrap": "v4-dev",
     "jquery": "*",
-    "popper.js": "https://unpkg.com/popper.js"
+    "popper.js": "https://unpkg.com/popper.js",
+    "bootstrap": "v4.0.0-beta"
   }
 }
