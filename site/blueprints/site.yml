@@ -1,7 +1,11 @@
 <?php if(!defined('KIRBY')) exit ?>
 
 title: Site
-pages: default
+pages:
+  template:
+    - default
+    - buildings
+    - events
 fields:
   siteSettings:
     label: Site Settings
