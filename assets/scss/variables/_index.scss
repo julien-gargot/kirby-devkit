@@ -3,4 +3,6 @@
 //   "bootstrap.variables"
 //   etc.
 
-// @import "config.bootstrap"; // imported in layout/bootstrap.
+@import "../../../bower_components/bootstrap/scss/functions";
+@import "config.bootstrap";
+@import "config.theme";

@@ -8,9 +8,8 @@
 // Box sizing, responsive, and more
 //
 
-@import "../../../bower_components/bootstrap/scss/functions";
-@import "../variables/_config.bootstrap.scss";
-// @import "../../../bower_components/bootstrap/scss/variables";
+// @import "../../../bower_components/bootstrap/scss/functions"; // imported in variables/
+// @import "../../../bower_components/bootstrap/scss/variables"; // not needed
 @import "../../../bower_components/bootstrap/scss/mixins";
 
 //
