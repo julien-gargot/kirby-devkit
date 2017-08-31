@@ -10,7 +10,7 @@
   <!-- scripts -->
   <?php
     if ( c::get('environment') == 'local' ) :
-      foreach ( c::get('scripts') as $style):
+      foreach ( c::get('scripts', array()) as $style):
         echo js($style);
       endforeach;
     else:

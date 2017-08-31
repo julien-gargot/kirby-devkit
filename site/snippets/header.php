@@ -12,7 +12,7 @@
 
   <?php
     if ( c::get('environment') == 'local' ) :
-      foreach ( c::get('styles') as $style):
+      foreach ( c::get('styles', array()) as $style):
         echo css($style);
       endforeach;
     else:
