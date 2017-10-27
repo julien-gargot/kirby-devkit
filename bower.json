@@ -14,8 +14,8 @@
   "private": true,
   "dependencies": {
     "font-awesome": "*",
-    "jquery": "*",
-    "popper.js": "https://unpkg.com/popper.js",
-    "bootstrap": "v4.0.0-beta"
+    "popper.js": "*",
+    "popper.js": "*",
+    "bootstrap": "https://github.com/julien-gargot/bootstrap.git#v4-dev"
   }
 }
