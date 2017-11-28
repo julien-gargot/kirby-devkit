@@ -14,7 +14,7 @@
   "private": true,
   "dependencies": {
     "font-awesome": "*",
-    "popper.js": "*",
+    "jquery": "*",
     "popper.js": "*",
     "bootstrap": "https://github.com/julien-gargot/bootstrap.git#v4-dev"
   }
