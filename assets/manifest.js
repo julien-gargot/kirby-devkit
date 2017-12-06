@@ -11,7 +11,7 @@ User settings for GUlp
  */
 module.exports.pluginScripts = [
   'bower_components/jquery/dist/jquery.js',
-  'bower_components/popper.js/index.js',
+  'bower_components/popper.js/dist/umd/popper.js',
   'bower_components/bootstrap/dist/js/bootstrap.js'
 ];
 
