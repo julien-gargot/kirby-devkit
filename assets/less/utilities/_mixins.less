@@ -1,0 +1,18 @@
+//** Center elements
+.center() {
+  left: 50%;
+  top: 50%;
+  bottom: auto;
+  right: auto;
+  transform : translateX(-50%) translateY(-50%);
+}
+.center(@xy) when (@xy = x) {
+  left: 50%;
+  right: auto;
+  transform : translateX(-50%);
+}
+.center(@xy) when (@xy = y) {
+  top: 50%;
+  bottom: auto;
+  transform : translateY(-50%);
+}
