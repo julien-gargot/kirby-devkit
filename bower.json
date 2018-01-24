@@ -16,6 +16,6 @@
     "font-awesome": "*",
     "jquery": "*",
     "popper.js": "*",
-    "bootstrap": "https://github.com/julien-gargot/bootstrap.git#v4-dev"
+    "bootstrap": "4.0.0"
   }
 }
