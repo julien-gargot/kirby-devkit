@@ -13,9 +13,11 @@
   "license": "CC-BY-SA-4.0",
   "private": true,
   "dependencies": {
-    "font-awesome": "*",
+    "font-awesome": "4.7.0"
+  },
+  "devDependencies": {
     "jquery": "*",
     "popper.js": "*",
-    "bootstrap": "4.0.0"
+    "bootstrap": "*"
   }
 }

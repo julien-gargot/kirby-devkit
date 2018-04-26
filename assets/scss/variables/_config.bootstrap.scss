@@ -4,21 +4,19 @@
 // consistent naming. Ex: $nav-link-disabled-color and $modal-content-box-shadow-xs.
 
 
+//
+// Color system
+//
+
+// stylelint-disable
+$black:    #000;
+
+
 // Options
 //
 // Quickly modify global styling by enabling or disabling optional features.
 
 $enable-grid-classes:       true;
-
-
-// Spacing
-//
-// Control the default styling of most Bootstrap elements by modifying these
-// variables. Mostly focused on spacing.
-// You can add more entries to the $spacers map, should you need more variation.
-
-// stylelint-disable
-$spacer: 1rem;
 
 
 // Body
@@ -28,6 +26,7 @@ $spacer: 1rem;
 $body-bg:                   #fff;
 $body-color:                #1a1a1a;
 
+
 // Links
 //
 // Style anchor elements.
@@ -36,6 +35,7 @@ $link-color:                #00f;
 $link-decoration:           underline;
 $link-hover-color:          darken($link-color, 15%);
 $link-hover-decoration:     underline;
+
 
 // Paragraphs
 //
@@ -89,12 +89,14 @@ $grid-gutter-width:           30px;
 
 // stylelint-disable value-keyword-case
 $font-family-sans-serif:      sans-serif;
-// $font-family-serif:           serif;
-// $font-family-monospace:       monospace;
+$font-family-serif:           serif;
+$font-family-monospace:       monospace;
 $font-family-base:            $font-family-sans-serif;
 // stylelint-enable value-keyword-case
 
 $font-size-base:              1rem; // Assumes the browser default, typically `16px`
+$font-size-lg:                ($font-size-base * 1.25);
+$font-size-sm:                ($font-size-base * .875);
 
 $font-weight-light:           300;
 $font-weight-normal:          400;
@@ -103,20 +105,8 @@ $font-weight-bold:            700;
 $font-weight-base:            $font-weight-normal;
 $line-height-base:            1.5;
 
-//$h1-font-size:                $font-size-base * 2.5;
-//$h2-font-size:                $font-size-base * 2;
-//$h3-font-size:                $font-size-base * 1.75;
-//$h4-font-size:                $font-size-base * 1.5;
-//$h5-font-size:                $font-size-base * 1.25;
-//$h6-font-size:                $font-size-base;
 
-$headings-margin-bottom:      ($spacer / 2);
-//$headings-font-family:        inherit;
-//$headings-font-weight:        500;
-//$headings-line-height:        1.2;
-//$headings-color:              inherit;
-
-$text-muted:                  #ccc;
+$headings-margin-bottom:      1rem;
 
 $dt-font-weight:              $font-weight-bold;
 
@@ -126,3 +116,9 @@ $dt-font-weight:              $font-weight-bold;
 // Customizes the `.table` component with basic values, each used across all table variations.
 
 $table-cell-padding:          .75rem;
+$table-caption-color:         #6c757d;
+
+
+// Forms
+
+$label-margin-bottom:         .5em;
