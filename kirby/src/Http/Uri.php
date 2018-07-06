@@ -271,7 +271,13 @@ class Uri
         if (Server::cli() === true) {
             $path = null;
         } else {
-            $path = trim(dirname(Server::get('SCRIPT_NAME')), '/');
+            $path = Server::get('SCRIPT_NAME');
+            // replace Windows backslashes
+            $path = str_replace('\\', '/', $path);
+            // remove the script
+            $path = dirname($path);
+            // remove the leading and trailing slashes
+            $path = trim($path, '/');
         }
 
         if ($path === '.') {

@@ -7,8 +7,8 @@ namespace Composer\Autoload;
 class ComposerStaticInite3bcbbc118c1197de6dc2746b169e2be
 {
     public static $files = array (
-        '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
+        '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
         '04c6c5c2f7095ccf6c481d3e53e1776f' => __DIR__ . '/..' . '/mustangostang/spyc/Spyc.php',
         '87988fc7b1c1f093da22a1a3de972f3a' => __DIR__ . '/../..' . '/config/helpers.php',
         '428e0a6316e676194f2283f47fbd1fc4' => __DIR__ . '/../..' . '/config/aliases.php',
@@ -163,6 +163,7 @@ class ComposerStaticInite3bcbbc118c1197de6dc2746b169e2be
         'Kirby\\Cms\\BlueprintConverterTest' => __DIR__ . '/../..' . '/tests/Cms/BlueprintConverterTest.php',
         'Kirby\\Cms\\BlueprintFieldsSection' => __DIR__ . '/../..' . '/src/Cms/BlueprintFieldsSection.php',
         'Kirby\\Cms\\BlueprintFilesSection' => __DIR__ . '/../..' . '/src/Cms/BlueprintFilesSection.php',
+        'Kirby\\Cms\\BlueprintInfoSection' => __DIR__ . '/../..' . '/src/Cms/BlueprintInfoSection.php',
         'Kirby\\Cms\\BlueprintMixinTest' => __DIR__ . '/../..' . '/tests/Cms/BlueprintMixinTest.php',
         'Kirby\\Cms\\BlueprintMockObject' => __DIR__ . '/../..' . '/tests/Cms/BlueprintObjectTest.php',
         'Kirby\\Cms\\BlueprintObject' => __DIR__ . '/../..' . '/src/Cms/BlueprintObject.php',
@@ -402,6 +403,7 @@ class ComposerStaticInite3bcbbc118c1197de6dc2746b169e2be
         'Kirby\\Image\\Camera' => __DIR__ . '/../..' . '/src/Image/Camera.php',
         'Kirby\\Image\\CameraTest' => __DIR__ . '/../..' . '/tests/Image/CameraTest.php',
         'Kirby\\Image\\Darkroom' => __DIR__ . '/../..' . '/src/Image/Darkroom.php',
+        'Kirby\\Image\\DarkroomTest' => __DIR__ . '/../..' . '/tests/Image/DarkroomTest.php',
         'Kirby\\Image\\Darkroom\\GdLib' => __DIR__ . '/../..' . '/src/Image/Darkroom/GdLib.php',
         'Kirby\\Image\\Darkroom\\ImageMagick' => __DIR__ . '/../..' . '/src/Image/Darkroom/ImageMagick.php',
         'Kirby\\Image\\Dimensions' => __DIR__ . '/../..' . '/src/Image/Dimensions.php',

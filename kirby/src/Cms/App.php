@@ -436,6 +436,16 @@ class App extends Component
     }
 
     /**
+     * Returns the currently active route
+     *
+     * @return Route|null
+     */
+    public function route()
+    {
+        return $this->router()->route();
+    }
+
+    /**
      * Returns the Router singleton
      *
      * @return Router
@@ -593,7 +603,7 @@ class App extends Component
      */
     public function thumb(string $src, string $dst, array $attributes = [])
     {
-        $options    = $this->options('thumbs', []);
+        $options    = $this->option('thumbs', []);
         $darkroom   = Darkroom::factory($options['driver'] ?? 'gd', $options);
         $attributes = $darkroom->preprocess($src, $attributes);
         $root       = (new Filename($src, $dst, $attributes))->toString();

@@ -365,7 +365,18 @@ class Blueprint extends BlueprintObject
             // pass down the model
             $props['model'] = $this->model();
 
-            $section = BlueprintSection::factory($props);
+            try {
+                $section = BlueprintSection::factory($props);
+            } catch (Exception $e) {
+                $section = BlueprintSection::factory([
+                    'headline' => 'Error',
+                    'name'     => $props['name'],
+                    'type'     => 'info',
+                    'theme'    => 'negative',
+                    'text'     => $e->getMessage(),
+                ]);
+            }
+
             $sections->set($section->id(), $section);
         }
 

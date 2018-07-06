@@ -64,7 +64,6 @@ class Panel
                 go($kirby->request()->url());
             }
         } catch (Throwable $e) {
-            error_log($e);
             die('The panel assets cannot be installed properly. Please check permissions of your media folder.');
         }
 
