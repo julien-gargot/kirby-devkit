@@ -413,15 +413,7 @@ class F
      */
     public static function read(string $file)
     {
-        if (file_exists($file) === false) {
-            return null;
-        }
-
-        if (is_readable($file) === false) {
-            throw new Exception('The file "' . $file . '" is not readable');
-        }
-
-        return file_get_contents($file);
+        return @file_get_contents($file);
     }
 
     /**

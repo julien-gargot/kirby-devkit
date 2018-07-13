@@ -21,20 +21,7 @@ use Kirby\Image\Image;
 class Avatar extends Model
 {
     use AvatarActions;
-
-    use HasStore;
     use HasThumbs;
-
-    /**
-     * Properties that should be converted to array
-     * in Avatar::toArray
-     *
-     * @var array
-     */
-    protected static $toArray = [
-        'url',
-        'exists'
-    ];
 
     /**
      * The Image object, which
@@ -43,6 +30,11 @@ class Avatar extends Model
      * @var Image
      */
     protected $asset;
+
+    /**
+     * @var string
+     */
+    protected $root;
 
     /**
      * The public url for the avatar file
@@ -92,6 +84,16 @@ class Avatar extends Model
     }
 
     /**
+     * Improve var_dump() output
+     *
+     * @return array
+     */
+    public function __debuginfo(): array
+    {
+        return $this->toArray();
+    }
+
+    /**
      * Returns the defined Image object
      * or initializes a default.
      *
@@ -99,21 +101,7 @@ class Avatar extends Model
      */
     public function asset(): Image
     {
-        if (is_a($this->asset, Image::class)) {
-            return $this->asset;
-        }
-
-        return $this->asset = $this->store()->asset();
-    }
-
-    /**
-     * Returns the default store class name
-     *
-     * @return string
-     */
-    protected function defaultStore()
-    {
-        return AvatarStoreDefault::class;
+        return $this->asset = $this->asset ?? new Image($this->root(), $this->url());
     }
 
     /**
@@ -125,7 +113,17 @@ class Avatar extends Model
      */
     public function exists(): bool
     {
-        return $this->store()->exists();
+        return is_file($this->root()) === true;
+    }
+
+    /**
+     * Return the avatar filename
+     *
+     * @return string
+     */
+    public function filename(): string
+    {
+        return 'profile.jpg';
     }
 
     /**
@@ -149,14 +147,44 @@ class Avatar extends Model
     }
 
     /**
+     * Returns the parent model
+     *
+     * @return User
+     */
+    public function parent(): User
+    {
+        return $this->user();
+    }
+
+    /**
+     * @return string
+     */
+    public function root(): ?string
+    {
+        return $this->user()->root() . '/' . $this->filename();
+    }
+
+    /**
      * Returns the AvatarRules class to
      * validate any important action.
      *
      * @return AvatarRules
      */
-    protected function rules()
+    protected function rules(): AvatarRules
     {
         return new AvatarRules();
+    }
+
+    /**
+     * Sets the root for the avatar file
+     *
+     * @param string $root
+     * @return self
+     */
+    protected function setRoot(string $root = null): self
+    {
+        $this->root = $root;
+        return $this;
     }
 
     /**
@@ -184,13 +212,26 @@ class Avatar extends Model
     }
 
     /**
+     * Converts the most important asset
+     * properties to an array
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return array_merge($this->asset()->toArray(), [
+            'url' => $this->url(),
+        ]);
+    }
+
+    /**
      * Returns the public url for the avatar file
      *
      * @return string
      */
     public function url(): string
     {
-        return $this->url ?? $this->url = $this->asset()->url();
+        return $this->url = $this->url ?? $this->mediaUrl();
     }
 
     /**
@@ -198,7 +239,7 @@ class Avatar extends Model
      *
      * @return User
      */
-    public function user()
+    public function user(): User
     {
         return $this->user;
     }

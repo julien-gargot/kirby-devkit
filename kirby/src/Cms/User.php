@@ -29,21 +29,6 @@ class User extends Model
     use HasStore;
 
     /**
-     * Those properties should be
-     * converted to an array in User::toArray
-     *
-     * @var array
-     */
-    protected static $toArray = [
-        'avatar',
-        'content',
-        'email',
-        'id',
-        'language',
-        'role'
-    ];
-
-    /**
      * @var Avatar
      */
     protected $avatar;
@@ -96,6 +81,20 @@ class User extends Model
     }
 
     /**
+     * Improved var_dump() output
+     *
+     * @return array
+     */
+    public function __debuginfo(): array
+    {
+        return array_merge($this->toArray(), [
+            'avatar'  => $this->avatar(),
+            'content' => $this->content(),
+            'role'    => $this->role()
+        ]);
+    }
+
+    /**
      * Returns the Avatar object
      *
      * @return Avatar
@@ -143,17 +142,6 @@ class User extends Model
         }
 
         return $this->collection = $this->kirby()->users();
-    }
-
-    /**
-     * Prepares the avatar object for the
-     * User::toArray method
-     *
-     * @return array
-     */
-    protected function convertAvatarToArray(): array
-    {
-        return $this->avatar()->toArray();
     }
 
     protected function defaultStore()
@@ -370,7 +358,7 @@ class User extends Model
      */
     public function username(): string
     {
-        return $this->name() ?? $this->email();
+        return empty($this->name()) ? $this->email() : $this->name();
     }
 
     /**
@@ -420,6 +408,16 @@ class User extends Model
         }
 
         return $this->role = Role::nobody();
+    }
+
+    /**
+     * The absolute path to the user directory
+     *
+     * @return string
+     */
+    public function root(): string
+    {
+        return $this->kirby()->root('accounts') . '/' . $this->id();
     }
 
     /**
@@ -535,5 +533,24 @@ class User extends Model
         }
 
         return $session;
+    }
+
+    /**
+     * Converts the most important user properties
+     * to an array
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'avatar'   => $this->avatar()->toArray(),
+            'content'  => $this->content()->toArray(),
+            'email'    => $this->email(),
+            'id'       => $this->id(),
+            'language' => $this->language(),
+            'role'     => $this->role()->name(),
+            'username' => $this->username()
+        ];
     }
 }

@@ -3,6 +3,7 @@
 namespace Kirby\Cms;
 
 use Kirby\Toolkit\A;
+use Kirby\Toolkit\F;
 use Kirby\Toolkit\Str;
 
 use Exception;
@@ -38,11 +39,22 @@ class BlueprintPagesSection extends BlueprintSection
 
     public function blueprints(): array
     {
+        if ($this->blueprints !== null) {
+            return $this->blueprints;
+        }
+
         $blueprints = [];
+        $templates  = $this->templates();
+
+        if (empty($templates) === true) {
+            foreach (glob(App::instance()->root('blueprints') . '/pages/*.yml') as $blueprint) {
+                $templates[] = F::name($blueprint);
+            }
+        }
 
         // convert every template to a usable option array
         // for the template select box
-        foreach ($this->templates() as $template) {
+        foreach ($templates as $template) {
 
             // create a dummy child page to load the blueprint
             $child = new Page([
@@ -55,11 +67,10 @@ class BlueprintPagesSection extends BlueprintSection
             $blueprints[] = [
                 'name'  => $blueprint->name(),
                 'title' => $blueprint->title(),
-                'num'   => $blueprint->num(),
             ];
         }
 
-        return $blueprints;
+        return $this->blueprints = $blueprints;
     }
 
     /**
@@ -101,7 +112,7 @@ class BlueprintPagesSection extends BlueprintSection
             $data = $data->filterBy('template', 'in', $templates);
         }
 
-        if ($this->sortBy() && $this->sortable() === false) {
+        if ($this->sortBy()) {
             $data = $data->sortBy(...Str::split($this->sortBy(), ' '));
         }
 
@@ -174,8 +185,11 @@ class BlueprintPagesSection extends BlueprintSection
             ]);
         }
 
+        // get the names of all accepted blueprints
+        $blueprints = array_column($this->blueprints(), 'name');
+
         // validate the template
-        if (in_array($data['template'], $this->templates()) === false) {
+        if (in_array($data['template'], $blueprints) === false) {
             throw new InvalidArgumentException([
                 'key' => 'page.template.invalid'
             ]);
@@ -287,14 +301,12 @@ class BlueprintPagesSection extends BlueprintSection
 
     public function sortable(): bool
     {
-        if ($this->status() !== 'listed') {
+        if ($this->status() !== 'listed' && $this->status() !== 'all') {
             return false;
         }
 
-        foreach ($this->blueprints() as $blueprint) {
-            if ($blueprint['num'] !== 'default') {
-                return false;
-            }
+        if ($this->sortBy() !== null) {
+            return false;
         }
 
         return true;

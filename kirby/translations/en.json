@@ -3,9 +3,10 @@
     "translation.name": "English",
     "translation.author": "Kirby Team",
 
+    "add": "Add",
     "confirm": "Ok",
     "cancel": "Cancel",
-    "add": "Add",
+    "discard": "Discard",
     "open": "Open",
     "upload": "Upload",
     "change": "Change",
@@ -89,6 +90,7 @@
 
     "structure.add.first": "Click to add the first item …",
     "structure.delete.confirm": "Do you really want to delete this item?",
+    "structure.discard.confirm": "Do you want to discard the new item?",
 
     "upload.errors": "Error",
     "upload.progress": "Uploading …",
@@ -206,6 +208,7 @@
     "error.page.changeTemplate.invalid": "The template for the page \"{slug}\" cannot be changed",
     "error.page.changeTemplate.permission": "You are not allowed to change the template for \"{slug}\"",
     "error.page.changeTitle.permission": "You are not allowed to change the title for \"{slug}\"",
+    "error.page.changeTitle.empty": "The title must not be empty",
     "error.page.num.invalid": "Please enter a valid sorting number. Numbers must not be negative.",
     "error.page.sort.permissions": "The page \"{slug}\" cannot be sorted",
     "error.page.sort.section.type": "The page cannot be dragged into this section",

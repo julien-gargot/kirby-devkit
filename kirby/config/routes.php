@@ -1,6 +1,7 @@
 <?php
 
 use Kirby\Api\Api;
+use Kirby\Cms\Media;
 use Kirby\Cms\Panel;
 use Kirby\Cms\PluginAssets;
 use Kirby\Cms\Response;
@@ -67,21 +68,30 @@ return function ($kirby) {
             }
         ],
         [
-            'pattern' => [
-                'media/site/(:any)',
-                'media/pages/(:all)',
-            ],
-            'action'  => function ($path) use ($kirby) {
-                if ($file = $kirby->file($path)) {
-                    go($file->publish()->url(), 307);
+            'pattern' => 'media/pages/(:all)/(:any)',
+            'action'  => function ($path, $filename) use ($kirby) {
+                $page = $kirby->page($path) ?? $kirby->site()->draft($path);
+
+                if ($page && $url = Media::link($page, $filename)) {
+                    go($url, 307);
                 }
             }
         ],
         [
-            'pattern' => 'media/users/(:any)/profile.jpg',
-            'action'  => function ($id) use ($kirby) {
-                if ($user = $kirby->users()->findBy('id', $id)) {
-                    go($user->avatar()->publish()->url(), 307);
+            'pattern' => 'media/site/(:any)',
+            'action'  => function ($filename) use ($kirby) {
+                if ($url = Media::link($kirby->site(), $filename)) {
+                    go($url, 307);
+                }
+            }
+        ],
+        [
+            'pattern' => 'media/users/(:any)/(:any)',
+            'action'  => function ($id, $filename) use ($kirby) {
+                $user = $kirby->users()->find($id);
+
+                if ($user && $url = Media::link($user, $filename)) {
+                    go($url, 307);
                 }
             }
         ],
@@ -104,11 +114,9 @@ return function ($kirby) {
 
                 // authenticated users may see drafts
                 if (Str::contains($path, '_drafts') === true) {
-                    $id     = dirname($path);
-                    $ptoken = basename($path);
 
-                    if ($draft = $kirby->site()->draft($id)) {
-                        if ($draft->isVerified($ptoken) === true) {
+                    if ($draft = $kirby->site()->draft($path)) {
+                        if ($draft->isVerified(get('token'))) {
                             return $draft;
                         }
                     }

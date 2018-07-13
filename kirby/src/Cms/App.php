@@ -16,6 +16,7 @@ use Kirby\Http\Server;
 use Kirby\Http\Visitor;
 use Kirby\Image\Darkroom;
 use Kirby\Session\AutoSession as Session;
+use Kirby\Text\KirbyTag;
 use Kirby\Toolkit\Url;
 use Kirby\Toolkit\Url\Query as UrlQuery;
 use Kirby\Toolkit\Controller;
@@ -146,8 +147,13 @@ class App extends Component
     {
         $path   = $path   ?? $this->path();
         $method = $method ?? $this->request()->method();
+        $route  = $this->router()->find($path, $method);
 
-        return $this->router()->call($path, $method);
+        $this->trigger('route:before', $route, $path, $method);
+        $result = $route->action()->call($route, ...$route->arguments());
+        $this->trigger('route:after', $route, $path, $method, $result);
+
+        return $result;
     }
 
     /**
@@ -176,6 +182,17 @@ class App extends Component
     public function collections(): Collections
     {
         return $this->collections = $this->collections ?? Collections::load($this);
+    }
+
+    /**
+     * Returns a core component
+     *
+     * @param string $name
+     * @return mixed
+     */
+    public function component($name)
+    {
+        return $this->extensions['components'][$name] ?? null;
     }
 
     /**
@@ -601,20 +618,9 @@ class App extends Component
      * @param array $options
      * @return null
      */
-    public function thumb(string $src, string $dst, array $attributes = [])
+    public function thumb(string $src, string $dst, array $options = [])
     {
-        $options    = $this->option('thumbs', []);
-        $darkroom   = Darkroom::factory($options['driver'] ?? 'gd', $options);
-        $attributes = $darkroom->preprocess($src, $attributes);
-        $root       = (new Filename($src, $dst, $attributes))->toString();
-
-        // check if the thumbnail has to be regenerated
-        if (file_exists($root) !== true || filemtime($root) < filemtime($src)) {
-            F::copy($src, $root);
-            $darkroom->process($root, $attributes);
-        }
-
-        return $root;
+        return $this->extensions['components']['thumb']($this, $src, $dst, $options);
     }
 
     /**
@@ -627,7 +633,17 @@ class App extends Component
     public function trigger(string $name, ...$arguments)
     {
         if ($functions = $this->extension('hooks', $name)) {
+            static $triggered = [];
+
             foreach ($functions as $function) {
+                if (in_array($function, $triggered[$name] ?? []) === true) {
+                    continue;
+                }
+
+                // mark the hook as triggered, to avoid endless loops
+                $triggered[$name][] = $function;
+
+                // bind the App object to the hook
                 $function->call($this, ...$arguments);
             }
         }

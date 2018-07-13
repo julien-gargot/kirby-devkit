@@ -12,8 +12,6 @@ class AvatarRules
     public static function create(Avatar $avatar, Upload $source): bool
     {
         static::validMime($avatar, $source->mime());
-        static::validDimensions($avatar, $source->width(), $source->height());
-
         return true;
     }
 
@@ -33,17 +31,6 @@ class AvatarRules
         if ($mime !== 'image/jpeg') {
             throw new InvalidArgumentException([
                 'key' => 'avatar.mime.invalid',
-            ]);
-        }
-
-        return true;
-    }
-
-    public static function validDimensions(Avatar $avatar, int $width, int $height): bool
-    {
-        if ($width > 3000 || $height > 3000) {
-            throw new InvalidArgumentException([
-                'key' => 'avatar.dimensions.invalid',
             ]);
         }
 
