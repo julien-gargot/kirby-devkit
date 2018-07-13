@@ -1,0 +1,22 @@
+title: Default Page
+
+columns:
+  - 1/3: subpages, files
+  - 2/3: content
+
+sections:
+  subpages:
+    headline: Subpages
+    type: pages
+    templates: default
+  files:
+    headline: Files
+    type: files
+  content:
+    type: fields
+    fields:
+      text:
+        label: Text
+        type: textarea
+        size: large
+
