@@ -26,6 +26,13 @@ return [
         }
     ],
     [
+        'pattern' => 'site/children',
+        'method'  => 'POST',
+        'action'  => function () {
+            return $this->site()->createChild($this->requestBody());
+        }
+    ],
+    [
         'pattern' => 'site/children/search',
         'method'  => 'POST',
         'action'  => function () {
@@ -44,6 +51,19 @@ return [
         'method'  => 'GET',
         'action'  => function () {
             return $this->site()->files();
+        }
+    ],
+    [
+        'pattern' => 'site/files',
+        'method'  => 'POST',
+        'action'  => function () {
+            return $this->upload(function ($source, $filename) {
+                return $this->site()->createFile([
+                    'source'   => $source,
+                    'template' => $this->requestBody('template'),
+                    'filename' => $filename
+                ]);
+            });
         }
     ],
     [

@@ -20,14 +20,17 @@ class Files extends Collection
      * @param array $inject
      * @return Files
      */
-    public static function factory(array $files, Model $parent = null, array $inject = [])
+    public static function factory(array $files, Model $parent)
     {
         $collection = new static([], $parent);
+        $kirby      = $parent->kirby();
 
         foreach ($files as $props) {
-            $file = new File($props + $inject + [
-                'collection' => $collection
-            ]);
+            $props['collection'] = $collection;
+            $props['kirby']      = $kirby;
+            $props['parent']     = $parent;
+
+            $file = new File($props);
 
             $collection->data[$file->id()] = $file;
         }
@@ -62,11 +65,15 @@ class Files extends Collection
     /**
      * Filter all files by the given template
      *
-     * @param string $template
+     * @param null|string|array $template
      * @return self
      */
-    public function template(string $template): self
+    public function template($template): self
     {
-        return $this->filterBy('template', '==', $template);
+        if (empty($template) === true) {
+            return $this;
+        }
+
+        return $this->filterBy('template', is_array($template) ? 'in' : '==', $template);
     }
 }

@@ -2,8 +2,10 @@
 
 namespace Kirby\Cms;
 
+use Kirby\Data\Data;
 use Kirby\Image\Image;
 use Kirby\Toolkit\Str;
+use Throwable;
 
 /**
  * The File class is a wrapper around
@@ -22,10 +24,7 @@ class File extends Model
     use FileActions;
 
     use HasContent;
-    use HasErrors;
     use HasSiblings;
-    use HasStore;
-    use HasTemplate;
     use HasThumbs;
 
     /**
@@ -60,6 +59,18 @@ class File extends Model
      * @var Model
      */
     protected $parent;
+
+    /**
+     * The absolute path to the file
+     *
+     * @var string|null
+     */
+    protected $root;
+
+    /**
+     * @var string
+     */
+    protected $template;
 
     /**
      * The public file Url
@@ -99,12 +110,6 @@ class File extends Model
     {
         // properties
         $this->setProperties($props);
-
-        if (is_a($this->parent(), Page::class) === true) {
-            $this->id = $this->parent()->id() . '/' . $this->filename();
-        } else {
-            $this->id = $this->filename();
-        }
     }
 
     /**
@@ -143,11 +148,7 @@ class File extends Model
      */
     public function asset(): Image
     {
-        if (is_a($this->asset, Image::class)) {
-            return $this->asset;
-        }
-
-        return $this->asset = $this->store()->asset();
+        return $this->asset = $this->asset ?? new Image($this->root(), $this->url());
     }
 
     /**
@@ -173,27 +174,97 @@ class File extends Model
             return $this->collection;
         }
 
-        if ($page = $this->page()) {
-            return $this->collection = $this->page()->files();
-        }
-
-        if ($site = $this->site()) {
-            return $this->collection = $this->site()->files();
-        }
-
-        return $this->collection = new Files([$this]);
+        return $this->collection = $this->parent()->files();
     }
 
-    protected function defaultStore()
+    /**
+     * Returns the content object
+     *
+     * @return Content
+     */
+    public function content(): Content
     {
-        return FileStoreDefault::class;
+        if (is_a($this->content, Content::class) === true) {
+            return $this->content;
+        }
+
+        try {
+            $data = Data::read($this->contentFile());
+        } catch (Throwable $e) {
+            $data = [];
+        }
+
+        return $this->setContent($data)->content();
     }
 
+    /**
+     * Absolute path to the meta text file
+     *
+     * @return string
+     */
+    public function contentFile(): string
+    {
+        return $this->root() . '.txt';
+    }
+
+    /**
+     * Provides a kirbytag or markdown
+     * tag for the file, which will be
+     * used in the panel, when the file
+     * gets dragged onto a textarea
+     *
+     * @return string
+     */
+    public function dragText($type = 'kirbytext'): string
+    {
+        switch ($type) {
+            case 'kirbytext':
+                if ($this->type() === 'image') {
+                    return '(image: ' . $this->id() . ')';
+                } else {
+                    return '(file: ' . $this->id() . ')';
+                }
+                // no break
+            case 'markdown':
+                if ($this->type() === 'image') {
+                    return '![' . $this->alt() . '](' . $this->url() . ')';
+                } else {
+                    return '[' . $this->filename() . '](' . $this->url() . ')';
+                }
+        }
+    }
+
+    /**
+     * Returns all content validation errors
+     *
+     * @return array
+     */
+    public function errors(): array
+    {
+        $errors = [];
+
+        foreach ($this->blueprint()->sections() as $section) {
+            $errors = array_merge($errors, $section->errors());
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Checks if the file exists on disk
+     *
+     * @return boolean
+     */
     public function exists(): bool
     {
-        return $this->store()->exists();
+        return is_file($this->root()) === true;
     }
 
+    /**
+     * Returns the filename with extension
+     *
+     * @return string
+     */
     public function filename(): string
     {
         return $this->filename;
@@ -216,7 +287,26 @@ class File extends Model
      */
     public function id(): string
     {
-        return $this->id;
+        if ($this->id !== null) {
+            return $this->id;
+        }
+
+        if (is_a($this->parent(), Page::class) === true) {
+            return $this->id = $this->parent()->id() . '/' . $this->filename();
+        }
+
+        return $this->id = $this->filename();
+    }
+
+    /**
+     * Compares the current object with the given file object
+     *
+     * @param File $file
+     * @return bool
+     */
+    public function is(File $file): bool
+    {
+        return $this->id() === $file->id();
     }
 
     /**
@@ -260,7 +350,7 @@ class File extends Model
      */
     public function model()
     {
-        return is_a($this->page(), Page::class) ? $this->page() : $this->site();
+        return $this->parent();
     }
 
     /**
@@ -292,7 +382,7 @@ class File extends Model
      */
     public function parent()
     {
-        return $this->parent;
+        return $this->parent = $this->parent ?? $this->kirby()->site();
     }
 
     /**
@@ -317,6 +407,16 @@ class File extends Model
     public function permissions(): FileBlueprintOptions
     {
         return $this->blueprint()->options();
+    }
+
+    /**
+     * Returns the absolute root to the file
+     *
+     * @return string|null
+     */
+    public function root(): ?string
+    {
+        return $this->root = $this->root ?? $this->parent()->root() . '/' . $this->filename();
     }
 
     /**
@@ -355,6 +455,16 @@ class File extends Model
     }
 
     /**
+     * @param string $template
+     * @return self
+     */
+    protected function setTemplate(string $template = null): self
+    {
+        $this->template = $template;
+        return $this;
+    }
+
+    /**
      * Sets the url
      *
      * @param string $url
@@ -377,6 +487,16 @@ class File extends Model
     }
 
     /**
+     * Returns the final template
+     *
+     * @return string|null
+     */
+    public function template(): ?string
+    {
+        return $this->template = $this->template ?? $this->content()->get('template')->value();
+    }
+
+    /**
      * Extended info for the array export
      * by injecting the information from
      * the asset.
@@ -389,11 +509,30 @@ class File extends Model
     }
 
     /**
+     * String template builder
+     *
+     * @param string|null $template
+     * @return string
+     */
+    public function toString(string $template = null): string
+    {
+        if ($template === null) {
+            return $this->id();
+        }
+
+        return Str::template($template, [
+            'file'  => $this,
+            'site'  => $this->site(),
+            'kirby' => $this->kirby()
+        ]);
+    }
+
+    /**
      * Returns the Url
      *
      * @return string
      */
-    public function url()
+    public function url(): string
     {
         return $this->url ?? $this->url = $this->kirby()->component('file::url')($this->kirby(), $this);
     }

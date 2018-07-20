@@ -82,13 +82,13 @@ trait HasFiles
      *
      * @return Files
      */
-    public function files()
+    public function files(): Files
     {
         if (is_a($this->files, Files::class) === true) {
             return $this->files;
         }
 
-        return $this->files = new Files([]);
+        return $this->files = Files::factory($this->inventory()['files'], $this);
     }
 
     /**
@@ -180,7 +180,10 @@ trait HasFiles
      */
     protected function setFiles(array $files = null): self
     {
-        $this->files = $files;
+        if ($files !== null) {
+            $this->files = Files::factory($files, $this);
+        }
+
         return $this;
     }
 

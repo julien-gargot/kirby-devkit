@@ -22,9 +22,7 @@ class Site extends Model
 
     use HasChildren;
     use HasContent;
-    use HasErrors;
     use HasFiles;
-    use HasStore;
 
     /**
      * The SiteBlueprint object
@@ -49,13 +47,6 @@ class Site extends Model
     protected $errorPageId = 'error';
 
     /**
-     * The files collection
-     *
-     * @var Files
-     */
-    protected $files;
-
-    /**
      * The home page object
      *
      * @var Page
@@ -71,11 +62,25 @@ class Site extends Model
     protected $homePageId = 'home';
 
     /**
+     * Cache for the inventory array
+     *
+     * @var array
+     */
+    protected $inventory;
+
+    /**
      * The current page object
      *
      * @var Page
      */
     protected $page;
+
+    /**
+     * The absolute path to the site directory
+     *
+     * @var string
+     */
+    protected $root;
 
     /**
      * The page url
@@ -123,50 +128,14 @@ class Site extends Model
     }
 
     /**
-     * Returns the Children collection
+     * Returns the absolute path to the site's
+     * content text file
      *
-     * @return Pages
+     * @return string
      */
-    public function children()
+    public function contentFile(): string
     {
-        if (is_a($this->children, Pages::class) === true) {
-            return $this->children;
-        }
-
-        return $this->children = Pages::factory($this->children ?? $this->store()->children(), $this, [
-            'kirby' => $this->kirby(),
-            'site'  => $this,
-        ]);
-    }
-
-    protected function defaultStore()
-    {
-        return SiteStoreDefault::class;
-    }
-
-    /**
-     * Returns a draft object by the path
-     * if one can be found
-     *
-     * @param string $path
-     * @return PageDraft|null
-     */
-    public function draft(string $path)
-    {
-        return PageDraft::seek($this, $path);
-    }
-
-    /**
-     * Return all drafts for the site
-     *
-     * @return Pages
-     */
-    public function drafts(): Pages
-    {
-        return Pages::factory($this->store()->drafts(), $this, [
-            'kirby' => $this->kirby(),
-            'site'  => $this,
-        ], PageDraft::class);
+        return $this->root() . '/site.txt';
     }
 
     /**
@@ -194,21 +163,29 @@ class Site extends Model
     }
 
     /**
-     * Returns the Files collection
+     * Returns all content validation errors
      *
-     * @return Files
+     * @return array
      */
-    public function files(): Files
+    public function errors(): array
     {
-        if (is_a($this->files, Files::class) === true) {
-            return $this->files;
+        $errors = [];
+
+        foreach ($this->blueprint()->sections() as $section) {
+            $errors = array_merge($errors, $section->errors());
         }
 
-        return $this->files = Files::factory($this->files ?? $this->store()->files(), $this, [
-            'kirby'  => $this->kirby(),
-            'parent' => $this,
-            'site'   => $this,
-        ]);
+        return $errors;
+    }
+
+    /**
+     * Checks if the site exists on disk
+     *
+     * @return boolean
+     */
+    public function exists(): bool
+    {
+        return is_dir($this->root()) === true;
     }
 
     /**
@@ -233,6 +210,17 @@ class Site extends Model
     public function homePageId(): string
     {
         return $this->homePageId ?? 'home';
+    }
+
+    /**
+     * Creates an inventory of all files
+     * and children in the site directory
+     *
+     * @return array
+     */
+    public function inventory(): array
+    {
+        return $this->inventory ?? $this->inventory = Dir::inventory($this->root());
     }
 
     /**
@@ -318,7 +306,7 @@ class Site extends Model
      */
     public function root(): string
     {
-        return $this->kirby()->root('content');
+        return $this->root = $this->root ?? $this->kirby()->root('content');
     }
 
     /**
@@ -446,6 +434,24 @@ class Site extends Model
             'title'     => $this->title()->value(),
             'url'       => $this->url(),
         ];
+    }
+
+    /**
+     * String template builder
+     *
+     * @param string|null $template
+     * @return string
+     */
+    public function toString(string $template = null): string
+    {
+        if ($template === null) {
+            return $this->url();
+        }
+
+        return Str::template($template, [
+            'site'  => $this,
+            'kirby' => $this->kirby()
+        ]);
     }
 
     /**

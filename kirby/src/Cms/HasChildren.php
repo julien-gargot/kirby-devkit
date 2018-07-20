@@ -13,6 +13,27 @@ trait HasChildren
     protected $children;
 
     /**
+     * The list of available drafts
+     *
+     * @var Pages
+     */
+    protected $drafts;
+
+    /**
+     * Returns the Pages collection
+     *
+     * @return Pages
+     */
+    public function children()
+    {
+        if (is_a($this->children, Pages::class) === true) {
+            return $this->children;
+        }
+
+        return $this->children = Pages::factory($this->inventory()['children'], $this);
+    }
+
+    /**
      * Return a list of ids for the model's
      * toArray method
      *
@@ -24,31 +45,51 @@ trait HasChildren
     }
 
     /**
-     * Returns the Children collection
+     * Searches for a child draft by id
      *
-     * Overwrite this for specific Children
-     * fetching logic for each model.
-     *
-     * @return Pages|Children
+     * @param string $path
+     * @return PageDraft|null
      */
-    public function children()
+    public function draft(string $path)
     {
-        if (is_a($this->children, Pages::class)) {
-            return $this->children;
+        return PageDraft::seek($this, $path);
+    }
+
+    /**
+     * Return all drafts for the site
+     *
+     * @return Pages
+     */
+    public function drafts(): Pages
+    {
+        if (is_a($this->drafts, Pages::class) === true) {
+            return $this->drafts;
         }
 
-        return $this->children = new Pages([]);
+        $inventory = Dir::inventory($this->root() . '/_drafts');
+
+        return $this->drafts = Pages::factory($inventory['children'], $this, PageDraft::class);
     }
 
     /**
      * Finds one or multiple children by id
      *
      * @param string ...$arguments
-     * @return Pages|Children
+     * @return Pages
      */
     public function find(...$arguments)
     {
         return $this->children()->find(...$arguments);
+    }
+
+    /**
+     * Finds a single page or draft
+     *
+     * @return Page|null
+     */
+    public function findPageOrDraft(string $path)
+    {
+        return $this->children()->find($path) ?? $this->drafts()->find($path);
     }
 
     /**
@@ -69,6 +110,16 @@ trait HasChildren
     public function hasChildren(): bool
     {
         return $this->children()->count() > 0;
+    }
+
+    /**
+     * Checks if the model has any drafts
+     *
+     * @return boolean
+     */
+    public function hasDrafts(): bool
+    {
+        return $this->drafts()->count() > 0;
     }
 
     /**
@@ -124,12 +175,15 @@ trait HasChildren
     /**
      * Sets the Children collection
      *
-     * @param Pages|Children|null $children
+     * @param array|null $children
      * @return self
      */
     protected function setChildren(array $children = null)
     {
-        $this->children = $children;
+        if ($children !== null) {
+            $this->children = Pages::factory($children, $this);
+        }
+
         return $this;
     }
 }

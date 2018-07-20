@@ -2,8 +2,11 @@
 
 namespace Kirby\Cms;
 
+use Closure;
+use Kirby\Data\Data;
 use Kirby\Exception\LogicException;
 use Kirby\Toolkit\A;
+use Kirby\Toolkit\F;
 use Kirby\Toolkit\Str;
 
 trait PageActions
@@ -24,7 +27,19 @@ trait PageActions
             return $this;
         }
 
-        return $this->commit('changeNum', $num);
+        return $this->commit('changeNum', [$this, $num], function ($oldPage, $num) {
+            $newPage = $oldPage->clone(['num' => $num]);
+
+            if ($oldPage->exists() === false) {
+                return $newPage;
+            }
+
+            if (Dir::move($oldPage->root(), $newPage->root()) !== true) {
+                throw new LogicException('The page directory cannot be moved');
+            }
+
+            return $newPage;
+        });
     }
 
     /**
@@ -44,7 +59,21 @@ trait PageActions
         // always sanitize the slug
         $slug = Str::slug($slug);
 
-        return $this->commit('changeSlug', $slug);
+        return $this->commit('changeSlug', [$this, $slug], function ($oldPage, $slug) {
+            $newPage = $oldPage->clone(['slug' => $slug]);
+
+            if ($oldPage->exists() === false) {
+                return $newPage;
+            }
+
+            if (Dir::move($oldPage->root(), $newPage->root()) !== true) {
+                throw new LogicException('The page directory cannot be moved');
+            }
+
+            Dir::remove($oldPage->mediaRoot());
+
+            return $newPage;
+        });
     }
 
     /**
@@ -71,9 +100,21 @@ trait PageActions
 
     protected function changeStatusToDraft(): self
     {
-        $page = $this->commit('changeStatus', 'draft');
-        $page->parentModel()->purge();
+        $page = $this->commit('changeStatus', [$this, 'draft'], function ($page) {
+            $draft = $page->clone(['num' => null], PageDraft::class);
 
+            if ($page->exists() === false) {
+                return $draft;
+            }
+
+            if (Dir::move($page->root(), $draft->root()) !== true) {
+                throw new LogicException('The page directory cannot be moved');
+            }
+
+            return $draft;
+        });
+
+        $page->parentModel()->purge();
         $this->resortSiblingsAfterUnlisting();
 
         return $page;
@@ -88,7 +129,10 @@ trait PageActions
             return $this;
         }
 
-        $page = $this->commit('changeStatus', 'listed', $num);
+        $page = $this->commit('changeStatus', [$this, 'listed', $num], function ($page, $status, $position) {
+            return $page->publish()->changeNum($position);
+        });
+
         $page->parentModel()->purge();
 
         if ($this->blueprint()->num() === 'default') {
@@ -104,9 +148,11 @@ trait PageActions
             return $this;
         }
 
-        $page = $this->commit('changeStatus', 'unlisted');
-        $page->parentModel()->purge();
+        $page = $this->commit('changeStatus', [$this, 'unlisted'], function ($page) {
+            return $page->publish()->changeNum(null);
+        });
 
+        $page->parentModel()->purge();
         $this->resortSiblingsAfterUnlisting();
 
         return $page;
@@ -129,7 +175,317 @@ trait PageActions
         $new      = 'pages/' . $template;
         $transfer = $this->transferData($this->content(), $old, $new);
 
-        return $this->commit('changeTemplate', $template, $transfer['data']);
+        return $this->commit('changeTemplate', [$this, $template, $transfer['data']], function ($oldPage, $template, $content) {
+            $newPage = $oldPage->clone([
+                'content'  => $content,
+                'template' => $template
+            ]);
+
+            if ($oldPage->exists() === false) {
+                return $newPage;
+            }
+
+            $newPage->save();
+
+            if (F::remove($oldPage->contentFile()) !== true) {
+                throw new LogicException('The old text file could not be removed');
+            }
+
+            return $newPage;
+        });
+    }
+
+    /**
+     * Change the page title
+     *
+     * @param string $title
+     * @return self
+     */
+    public function changeTitle(string $title): self
+    {
+        if ($title === $this->title()->value()) {
+            return $this;
+        }
+
+        return $this->commit('changeTitle', [$this, $title], function ($page, $title) {
+            return $page->clone(['content' => ['title' => $title]])->save();
+        });
+    }
+
+    /**
+     * Commits a page action, by following these steps
+     *
+     * 1. checks the action rules
+     * 2. sends the before hook
+     * 3. commits the store action
+     * 4. sends the after hook
+     * 5. returns the result
+     *
+     * @param string $action
+     * @param mixed ...$arguments
+     * @return mixed
+     */
+    protected function commit(string $action, array $arguments, Closure $callback)
+    {
+        $old = $this->hardcopy();
+
+        $this->rules()->$action(...$arguments);
+        $this->kirby()->trigger('page.' . $action . ':before', ...$arguments);
+        $result = $callback(...$arguments);
+        $this->kirby()->trigger('page.' . $action . ':after', $result, $old);
+
+        // flush the pages cache, except the changeNum action is run
+        // flushing it there, would be triggered way too often.
+        // triggering it on sort and hide is absolutely enough
+        if ($action !== 'changeNum') {
+            $this->kirby()->cache('pages')->flush();
+        }
+
+        return $result;
+    }
+
+    /**
+     * Creates and stores a new page
+     *
+     * @param array $props
+     * @return self
+     */
+    public static function create(array $props): self
+    {
+        // clean up the slug
+        $props['slug']     = Str::slug($props['slug'] ?? $props['content']['title'] ?? null);
+        $props['template'] = strtolower($props['template'] ?? 'default');
+
+        // create a temporary page object
+        $page = PageDraft::factory($props);
+
+        return $page->commit('create', [$page, $props], function ($page, $props) {
+            if ($page->exists() === true) {
+                throw new DuplicateException([
+                    'key'  => 'page.draft.duplicate',
+                    'data' => ['slug' => $page->slug()]
+                ]);
+            }
+
+            // create the new page directory
+            if (Dir::make($page->root()) !== true) {
+                throw new LogicException('The page directory for "' . $page->slug() . '" cannot be created');
+            }
+
+            // write the content file
+            return $page->clone()->save();
+        });
+    }
+
+    /**
+     * Creates a child of the current page
+     *
+     * @param array $props
+     * @return self
+     */
+    public function createChild(array $props): self
+    {
+        $props = array_merge($props, [
+            'url'    => null,
+            'num'    => null,
+            'parent' => $this,
+            'site'   => $this->site(),
+        ]);
+
+        return static::create($props);
+    }
+
+    public function createFile(array $props)
+    {
+        $props = array_merge($props, [
+            'parent' => $this,
+            'url'    => null
+        ]);
+
+        return File::create($props);
+    }
+
+    /**
+     * Create the sorting number for the page
+     * depending on the blueprint settings
+     *
+     * @param integer $num
+     * @return integer
+     */
+    protected function createNum(int $num = null): int
+    {
+        $mode = $this->blueprint()->num();
+
+        switch ($mode) {
+            case 'zero':
+                return 0;
+            case 'default':
+                // avoid zeros or negative numbers
+                if ($num < 1) {
+                    return 1;
+                }
+
+                $max = $this->parentModel()->purge()->children()->listed()->merge($this)->count();
+
+                // avoid higher numbers than possible
+                if ($num > $max) {
+                    return $max;
+                }
+
+                return $num;
+            default:
+                $template = Str::template($mode, [
+                    'kirby' => $this->kirby(),
+                    'page'  => $this,
+                    'site'  => $this->site(),
+                ]);
+
+                return intval($template);
+        }
+    }
+
+    /**
+     * Deletes the page
+     *
+     * @param bool $force
+     * @return bool
+     */
+    public function delete(bool $force = false): bool
+    {
+        $result = $this->commit('delete', [$this, $force], function ($page, $force) {
+            if ($page->exists() === false) {
+                return true;
+            }
+
+            // delete all files individually
+            foreach ($page->files() as $file) {
+                $file->delete();
+            }
+
+            // delete all children individually
+            foreach ($page->children() as $child) {
+                $child->delete(true);
+            }
+
+            // delete all public media files
+            Dir::remove($page->mediaRoot());
+
+            // delete the content folder for this page
+            Dir::remove($page->root());
+
+            // if the page is a draft and the _drafts folder
+            // is now empty. clean it up.
+            if ($page->isDraft() === true) {
+                $draftsDir = dirname($page->root());
+
+                if (Dir::isEmpty($draftsDir) === true) {
+                    Dir::remove($draftsDir);
+                }
+            }
+
+            return true;
+        });
+
+        $this->parentModel()->purge();
+        $this->resortSiblingsAfterUnlisting();
+
+        return $result;
+    }
+
+    public function publish()
+    {
+        if ($this->isDraft() === false) {
+            return $this;
+        }
+
+        $page = $this->clone([], Page::class);
+
+        if ($this->exists() === false) {
+            return $page;
+        }
+
+        if (Dir::move($this->root(), $page->root()) !== true) {
+            throw new LogicException('The draft folder cannot be moved');
+        }
+
+        // Get the draft folder and check if there are any other drafts
+        // left. Otherwise delete it.
+        $draftDir = dirname($this->root());
+
+        if (Dir::isEmpty($draftDir) === true) {
+            Dir::remove($draftDir);
+        }
+
+        return $page;
+    }
+
+    /**
+     * Clean internal caches
+     */
+    public function purge(): self
+    {
+        $this->children  = null;
+        $this->blueprint = null;
+
+        return $this;
+    }
+
+    protected function resortSiblingsAfterListing(int $position): bool
+    {
+        // get all siblings including the current page
+        $siblings = $this->parentModel()->purge()->children()->listed()->merge($this);
+
+        // get a non-associative array of ids
+        $keys  = $siblings->keys();
+        $index = array_search($this->id(), $keys);
+
+        // if the page is not included in the siblings something went wrong
+        if ($index === false) {
+            throw new LogicException('The page is not included in the sorting index');
+        }
+
+        if ($position > count($keys)) {
+            $position = count($keys);
+        }
+
+        // move the current page number in the array of keys
+        // subtract 1 from the num and the position, because of the
+        // zero-based array keys
+        $sorted = A::move($keys, $index, $position - 1);
+
+        foreach ($sorted as $key => $id) {
+            if ($id === $this->id()) {
+                continue;
+            } else {
+                $siblings->findBy('id', $id)->changeNum($key + 1);
+            }
+        }
+
+        return true;
+    }
+
+    protected function resortSiblingsAfterUnlisting(): bool
+    {
+        $siblings = $this->parentModel()->purge()->children()->listed()->not($this);
+        $index    = 0;
+
+        foreach ($siblings as $sibling) {
+            $index++;
+            $sibling->changeNum($index);
+        }
+
+        return true;
+    }
+
+    /**
+     * Stores the file meta content on disk
+     *
+     * @return self
+     */
+    public function save(): self
+    {
+        Data::write($this->contentFile(), $this->content()->toArray());
+        return $this;
     }
 
     /**
@@ -140,7 +496,7 @@ trait PageActions
      * @param string $new       New blueprint
      * @return array
      */
-    public function transferData(Content $content, string $old, string $new): array
+    protected function transferData(Content $content, string $old, string $new): array
     {
         // Prepare data
         $data      = [];
@@ -204,225 +560,42 @@ trait PageActions
     }
 
     /**
-     * Change the page title
+     * Updates the page data
      *
-     * @param string $title
+     * @param array $input
+     * @param boolean $validate
      * @return self
      */
-    public function changeTitle(string $title): self
+    public function update(array $input = null, bool $validate = true): self
     {
-        if ($title === $this->title()->value()) {
-            return $this;
-        }
-
-        return $this->commit('changeTitle', $title);
-    }
-
-    /**
-     * Commits a page action, by following these steps
-     *
-     * 1. checks the action rules
-     * 2. sends the before hook
-     * 3. commits the store action
-     * 4. sends the after hook
-     * 5. returns the result
-     *
-     * @param string $action
-     * @param mixed ...$arguments
-     * @return mixed
-     */
-    protected function commit(string $action, ...$arguments)
-    {
-        $old = $this->hardcopy();
-
-        $this->rules()->$action($this, ...$arguments);
-        $this->kirby()->trigger('page.' . $action . ':before', $this, ...$arguments);
-        $result = $this->store()->$action(...$arguments);
-        $this->kirby()->trigger('page.' . $action . ':after', $result, $old);
-
-        // flush the pages cache, except the changeNum action is run
-        // flushing it there, would be triggered way too often.
-        // triggering it on sort and hide is absolutely enough
-        if ($action !== 'changeNum') {
-            $this->kirby()->cache('pages')->flush();
-        }
-
-        return $result;
-    }
-
-    /**
-     * Creates and stores a new page
-     *
-     * @param array $props
-     * @return self
-     */
-    public static function create(array $props): self
-    {
-        // clean up the slug
-        $props['slug'] = Str::slug($props['slug'] ?? $props['content']['title'] ?? null);
-
-        // create a temporary page object
-        $page = PageDraft::factory($props);
-
-        return $page->commit('create', $props);
-    }
-
-    /**
-     * Creates a child of the current page
-     *
-     * @param array $props
-     * @return self
-     */
-    public function createChild(array $props): self
-    {
-        $props = array_merge($props, [
-            'url'    => null,
-            'num'    => null,
-            'parent' => $this,
-            'site'   => $this->site(),
-            'store'  => $this->store()::PAGE_STORE_CLASS,
+        $form = Form::for($this, [
+            'values' => $input
         ]);
 
-        return static::create($props);
-    }
-
-    public function createFile(array $props)
-    {
-        $props = array_merge($props, [
-            'parent' => $this,
-            'store'  => $this->store()::FILE_STORE_CLASS,
-            'url'    => null
-        ]);
-
-        return File::create($props);
-    }
-
-    /**
-     * Create the sorting number for the page
-     * depending on the blueprint settings
-     *
-     * @param integer $num
-     * @return integer
-     */
-    protected function createNum(int $num = null): int
-    {
-        $mode = $this->blueprint()->num();
-
-        switch ($mode) {
-            case 'zero':
-                return 0;
-            case 'default':
-                // avoid zeros or negative numbers
-                if ($num < 1) {
-                    return 1;
-                }
-
-                $max = $this->parentModel()->purge()->children()->listed()->merge($this)->count();
-
-                // avoid higher numbers than possible
-                if ($num > $max) {
-                    return $max;
-                }
-
-                return $num;
-            default:
-                $template = Str::template($mode, [
-                    'kirby' => $this->kirby(),
-                    'page'  => $this,
-                    'site'  => $this->site(),
+        // validate the input
+        if ($validate === true) {
+            if ($form->isInvalid() === true) {
+                throw new InvalidArgumentException([
+                    'fallback' => 'Invalid form with errors',
+                    'details'  => $form->errors()
                 ]);
-
-                return intval($template);
-        }
-    }
-
-    /**
-     * Deletes the page
-     *
-     * @param bool $force
-     * @return bool
-     */
-    public function delete(bool $force = false): bool
-    {
-        $this->rules()->delete($this, $force);
-        $this->kirby()->trigger('page.delete:before', $this, $force);
-
-        // delete all files individually
-        foreach ($this->files() as $file) {
-            $file->delete();
-        }
-
-        // delete all children individually
-        foreach ($this->children() as $child) {
-            $child->delete(true);
-        }
-
-        $result = $this->store()->delete();
-        $this->parentModel()->purge();
-
-        $this->resortSiblingsAfterUnlisting();
-
-        $this->kirby()->trigger('page.delete:after', $result, $this);
-        $this->kirby()->cache('pages')->flush();
-
-        return $result;
-    }
-
-    /**
-     * Clean internal caches
-     */
-    public function purge(): self
-    {
-        $this->children  = null;
-        $this->blueprint = null;
-
-        return $this;
-    }
-
-    protected function resortSiblingsAfterListing(int $position): bool
-    {
-        // get all siblings including the current page
-        $siblings = $this->parentModel()->purge()->children()->listed()->merge($this);
-
-        // get a non-associative array of ids
-        $keys  = $siblings->keys();
-        $index = array_search($this->id(), $keys);
-
-        // if the page is not included in the siblings something went wrong
-        if ($index === false) {
-            throw new LogicException('The page is not included in the sorting index');
-        }
-
-        if ($position > count($keys)) {
-            $position = count($keys);
-        }
-
-        // move the current page number in the array of keys
-        // subtract 1 from the num and the position, because of the
-        // zero-based array keys
-        $sorted = A::move($keys, $index, $position - 1);
-
-        foreach ($sorted as $key => $id) {
-            if ($id === $this->id()) {
-                continue;
-            } else {
-                $siblings->findBy('id', $id)->changeNum($key + 1);
             }
         }
 
-        return true;
-    }
+        $result = $this->commit('update', [$this, $form->values(), $form->strings()], function ($page, $values, $strings) {
+            $content = $page
+                ->content()
+                ->update($strings)
+                ->toArray();
 
-    protected function resortSiblingsAfterUnlisting(): bool
-    {
-        $siblings = $this->parentModel()->purge()->children()->listed()->not($this);
-        $index    = 0;
+            return $page->clone(['content' => $content])->save();
+        });
 
-        foreach ($siblings as $sibling) {
-            $index++;
-            $sibling->changeNum($index);
+        // if num is created from page content, update num on content update
+        if ($this->isListed() === true && in_array($this->blueprint()->num(), ['zero', 'default']) === false) {
+            $this->changeNum();
         }
 
-        return true;
+        return $result;
     }
 }

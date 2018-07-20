@@ -3,7 +3,9 @@
 namespace Kirby\Cms;
 
 use Exception;
+use Kirby\Data\Data;
 use Kirby\Exception\InvalidArgumentException;
+use Throwable;
 
 trait HasContent
 {
@@ -55,7 +57,13 @@ trait HasContent
             return $this->content;
         }
 
-        return $this->setContent($this->store()->content())->content();
+        try {
+            $data = Data::read($this->contentFile());
+        } catch (Throwable $e) {
+            $data = [];
+        }
+
+        return $this->setContent($data)->content();
     }
 
     /**
@@ -94,35 +102,5 @@ trait HasContent
 
         $this->content = $content;
         return $this;
-    }
-
-    /**
-     * Updates the model data
-     *
-     * @param array $input
-     * @param boolean $validate
-     * @return self
-     */
-    public function update(array $input = null, bool $validate = true): self
-    {
-        $form = Form::for($this, [
-            'values' => $input
-        ]);
-
-        // validate the input
-        if ($validate === true) {
-            if ($form->isInvalid() === true) {
-                throw new InvalidArgumentException([
-                    'fallback' => 'Invalid form with errors',
-                    'details'  => $form->errors()
-                ]);
-            }
-        }
-
-        // get the data values array
-        $values  = $form->values();
-        $strings = $form->strings();
-
-        return $this->commit('update', $values, $strings);
     }
 }

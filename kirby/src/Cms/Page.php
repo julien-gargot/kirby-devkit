@@ -3,9 +3,11 @@
 namespace Kirby\Cms;
 
 use Closure;
+use Kirby\Data\Data;
 use Kirby\Exception\NotFoundException;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
+use Throwable;
 
 /**
  * The Page class is the heart and soul of
@@ -22,15 +24,10 @@ class Page extends Model
 {
     use PageActions;
     use HasChildren;
-    use HasContent {
-        update as protected updateContent;
-    }
-    use HasErrors;
+    use HasContent;
     use HasFiles;
     use HasMethods;
     use HasSiblings;
-    use HasStore;
-    use HasTemplate;
 
     /**
      * Registry with all Page models
@@ -67,6 +64,11 @@ class Page extends Model
     protected $blueprint;
 
     /**
+     * @var string
+     */
+    protected $contentFile;
+
+    /**
      * Sorting number + slug
      *
      * @var string
@@ -86,6 +88,11 @@ class Page extends Model
      * @var string
      */
     protected $id;
+
+    /**
+     * @var array
+     */
+    protected $inventory;
 
     /**
      * The sorting number
@@ -114,6 +121,13 @@ class Page extends Model
      * @var string
      */
     protected $slug;
+
+    /**
+     * The intended page template
+     *
+     * @var string
+     */
+    protected $template;
 
     /**
      * The page url
@@ -153,13 +167,6 @@ class Page extends Model
     public function __construct(array $props)
     {
         $this->setProperties($props);
-
-        // set the id, depending on the parent
-        if ($parent = $this->parent()) {
-            $this->id = $parent->id() . '/' . $this->slug();
-        } else {
-            $this->id = $this->slug();
-        }
     }
 
     /**
@@ -258,25 +265,6 @@ class Page extends Model
     }
 
     /**
-     * Returns the Children collection for this page
-     * The HasChildren trait takes care of the rest
-     *
-     * @return Pages|Children
-     */
-    public function children()
-    {
-        if (is_a($this->children, Pages::class) === true) {
-            return $this->children;
-        }
-
-        return $this->children = Children::factory($this->children ?? $this->store()->children(), $this, [
-            'kirby'  => $this->kirby(),
-            'site'   => $this->site(),
-            'parent' => $this
-        ]);
-    }
-
-    /**
      * Clone the page object and
      * optionally convert it to a draft object
      *
@@ -303,16 +291,33 @@ class Page extends Model
             return $this->collection;
         }
 
-        if ($parent = $this->parent()) {
+        if ($parent = $this->parentModel()) {
             return $this->collection = $parent->children();
         }
 
         return $this->collection = new Pages([$this]);
     }
 
-    protected function defaultStore()
+    /**
+     * Returns the content text file
+     * which is found by the inventory method
+     *
+     * @return string|null
+     */
+    public function contentFile(): ?string
     {
-        return PageStoreDefault::class;
+        // use the cached version
+        if ($this->contentFile !== null) {
+            return $this->contentFile;
+        }
+
+        // create from template if the template is already set
+        if ($template = $this->template()) {
+            return $this->contentFile = $this->root() . '/' . $template . '.txt';
+        }
+
+        // detect from the inventory
+        return $this->contentFile = $this->inventory()['content'];
     }
 
     /**
@@ -344,38 +349,47 @@ class Page extends Model
     }
 
     /**
-     * Searches for a child draft by id
+     * Provides a kirbytag or markdown
+     * tag for the page, which will be
+     * used in the panel, when the page
+     * gets dragged onto a textarea
      *
-     * @param string $path
-     * @return PageDraft|null
+     * @return string
      */
-    public function draft(string $path)
+    public function dragText($type = 'kirbytext'): string
     {
-        return PageDraft::seek($path);
+        switch ($type) {
+            case 'kirbytext':
+                return '(link: ' . $this->id() . ' text: ' . $this->title() . ')';
+            case 'markdown':
+                return '[' . $this->title() . '](' . $this->url() . ')';
+        }
     }
 
     /**
-     * Return all drafts for the page
+     * Returns all content validation errors
      *
-     * @return Children
+     * @return array
      */
-    public function drafts(): Children
+    public function errors(): array
     {
-        return Children::factory($this->store()->drafts(), $this, [
-            'kirby'  => $this->kirby(),
-            'site'   => $this->site(),
-            'parent' => $this
-        ], PageDraft::class);
+        $errors = [];
+
+        foreach ($this->blueprint()->sections() as $section) {
+            $errors = array_merge($errors, $section->errors());
+        }
+
+        return $errors;
     }
 
     /**
-     * Checks if the page exists in the store
+     * Checks if the page exists on disk
      *
      * @return bool
      */
     public function exists(): bool
     {
-        return $this->store()->exists();
+        return is_dir($this->root()) === true;
     }
 
     /**
@@ -391,24 +405,6 @@ class Page extends Model
         }
 
         return new static($props);
-    }
-
-    /**
-     * Returns the Files collection
-     *
-     * @return Files
-     */
-    public function files(): Files
-    {
-        if (is_a($this->files, Files::class) === true) {
-            return $this->files;
-        }
-
-        return $this->files = Files::factory($this->files ?? $this->store()->files(), $this, [
-            'kirby'  => $this->kirby(),
-            'parent' => $this,
-            'site'   => $this->site(),
-        ]);
     }
 
     /**
@@ -462,7 +458,27 @@ class Page extends Model
      */
     public function id(): string
     {
-        return $this->id;
+        if ($this->id !== null) {
+            return $this->id;
+        }
+
+        // set the id, depending on the parent
+        if ($parent = $this->parent()) {
+            return $this->id = $parent->id() . '/' . $this->slug();
+        }
+
+        return $this->id = $this->slug();
+    }
+
+    /**
+     * Returns the inventory of files
+     * children and content files
+     *
+     * @return array
+     */
+    public function inventory(): array
+    {
+        return $this->inventory = $this->inventory ?? Dir::inventory($this->root());
     }
 
     /**
@@ -523,7 +539,11 @@ class Page extends Model
      */
     public function isDescendantOfActive(): bool
     {
-        return $this->isDescendantOf($this->site()->page());
+        if ($active = $this->site()->page()) {
+            return $this->isDescendantOf($active);
+        }
+
+        return false;
     }
 
     /**
@@ -702,7 +722,7 @@ class Page extends Model
      */
     public function modified(string $format = 'U')
     {
-        return date($format, $this->store()->modified());
+        return date($format, filemtime($this->contentFile()));
     }
 
     /**
@@ -736,6 +756,17 @@ class Page extends Model
     }
 
     /**
+     * Returns the escaped Id, which is
+     * used in the panel to make routing work properly
+     *
+     * @return string
+     */
+    public function panelId(): string
+    {
+        return str_replace('/', '+', $this->id());
+    }
+
+    /**
      * Returns the url to the editing view
      * in the panel
      *
@@ -743,7 +774,7 @@ class Page extends Model
      */
     public function panelUrl(): string
     {
-        return $this->kirby()->url('panel') . '/pages/' . str_replace('/', '+', $this->id());
+        return $this->kirby()->url('panel') . '/pages/' . $this->panelId();
     }
 
     /**
@@ -967,6 +998,18 @@ class Page extends Model
     }
 
     /**
+     * Sets the intended template
+     *
+     * @param string $template
+     * @return self
+     */
+    protected function setTemplate(string $template = null): self
+    {
+        $this->template = $template ? strtolower($template) : null;
+        return $this;
+    }
+
+    /**
      * Sets the Url
      *
      * @param string $url
@@ -1012,6 +1055,16 @@ class Page extends Model
     }
 
     /**
+     * Returns the final template
+     *
+     * @return string
+     */
+    public function template(): string
+    {
+        return $this->template = $this->template ?? $this->inventory()['template'];
+    }
+
+    /**
      * Returns the title field or the slug as fallback
      *
      * @return Field
@@ -1019,6 +1072,25 @@ class Page extends Model
     public function title(): Field
     {
         return $this->content()->get('title')->or($this->slug());
+    }
+
+    /**
+     * String template builder
+     *
+     * @param string|null $template
+     * @return string
+     */
+    public function toString(string $template = null): string
+    {
+        if ($template === null) {
+            return $this->id();
+        }
+
+        return Str::template($template, [
+            'page'  => $this,
+            'site'  => $this->site(),
+            'kirby' => $this->kirby()
+        ]);
     }
 
     /**
@@ -1030,25 +1102,6 @@ class Page extends Model
     public function uid(): string
     {
         return $this->slug();
-    }
-
-    /**
-     * Updates the page data
-     *
-     * @param array $input
-     * @param boolean $validate
-     * @return self
-     */
-    public function update(array $input = null, bool $validate = true): self
-    {
-        $result = $this->updateContent($input, $validate);
-
-        // if num is created from page content, update num on content update
-        if ($this->isListed() === true && in_array($this->blueprint()->num(), ['zero', 'default']) === false) {
-            $this->changeNum();
-        }
-
-        return $result;
     }
 
     /**

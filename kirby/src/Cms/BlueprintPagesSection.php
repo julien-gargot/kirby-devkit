@@ -20,6 +20,7 @@ class BlueprintPagesSection extends BlueprintSection
 
     protected $add;
     protected $blueprints;
+    protected $dragTextType;
     protected $sortable;
     protected $status;
     protected $templates;
@@ -109,7 +110,7 @@ class BlueprintPagesSection extends BlueprintSection
 
         // filter by all set templates
         if ($templates = $this->templates()) {
-            $data = $data->filterBy('template', 'in', $templates);
+            $data = $data->template($templates);
         }
 
         if ($this->sortBy()) {
@@ -131,15 +132,18 @@ class BlueprintPagesSection extends BlueprintSection
         return 'all';
     }
 
+    protected function dragTextType()
+    {
+        if ($this->dragTextType !== null) {
+            return $this->dragTextType;
+        }
+
+        return $this->dragTextType = (App::instance()->option('panel')['kirbytext'] ?? true) ? 'kirbytext' : 'markdown';
+    }
 
     protected function itemImageDefault($item)
     {
         return $item->image();
-    }
-
-    protected function itemLink($item)
-    {
-        return '/pages/' . str_replace('/', '+', $item->id());
     }
 
     protected function itemToResult($item)
@@ -147,59 +151,21 @@ class BlueprintPagesSection extends BlueprintSection
         $stringTemplateData = [$this->modelType($item) => $item];
 
         return [
+            'dragText'         => $item->dragText($this->dragTextType()),
             'icon'             => $this->itemIcon($item),
             'id'               => $item->id(),
             'image'            => $this->itemImage($item, $stringTemplateData),
-            'info'             => $this->itemValue($item, 'info', $stringTemplateData),
-            'link'             => $this->itemLink($item),
+            'info'             => $item->toString($this->item['info'] ?? ''),
+            'link'             => '/pages/' . $item->panelId(),
             'parent'           => $item->parent() ? $item->parent()->id(): null,
             'status'           => $item->status(),
-            'text'             => $this->itemValue($item, 'title', $stringTemplateData),
+            'text'             => $item->toString($this->item['title'] ?? '{{ page.title }}'),
             'url'              => $item->url(),
             'permissions'      => [
                 'sort'         => $item->isSortable(),
                 'changeStatus' => $item->permissions()->changeStatus(),
             ],
         ];
-    }
-
-    public function post(array $data)
-    {
-        if ($this->add() === false) {
-            throw new LogicException([
-                'key' => 'blueprint.section.pages.add'
-            ]);
-        }
-
-        // make sure the slug is provided
-        if (isset($data['slug']) === false) {
-            throw new InvalidArgumentException([
-                'key' => 'page.slug.invalid'
-            ]);
-        }
-
-        // make sure the template is provided
-        if (isset($data['slug']) === false) {
-            throw new InvalidArgumentException([
-                'key' => 'page.template.missing'
-            ]);
-        }
-
-        // get the names of all accepted blueprints
-        $blueprints = array_column($this->blueprints(), 'name');
-
-        // validate the template
-        if (in_array($data['template'], $blueprints) === false) {
-            throw new InvalidArgumentException([
-                'key' => 'page.template.invalid'
-            ]);
-        }
-
-        return $this->parent()->createChild([
-            'content'  => $data['content'],
-            'slug'     => $data['slug'],
-            'template' => $data['template']
-        ]);
     }
 
     public function routes(): array
@@ -210,20 +176,6 @@ class BlueprintPagesSection extends BlueprintSection
                 'method'  => 'GET',
                 'action'  => function () {
                     return $this->section()->paginate($this->requestQuery('page', 1), $this->requestQuery('limit'))->toArray();
-                }
-            ],
-            'create' => [
-                'pattern' => '/',
-                'method'  => 'POST',
-                'action'  => function () {
-                    return $this->section()->post($this->requestBody());
-                }
-            ],
-            'sort' => [
-                'pattern' => 'sort',
-                'method'  => 'PATCH',
-                'action'  => function () {
-                    return $this->section()->sort($this->requestBody('page'), $this->requestBody('status'), $this->requestBody('position'));
                 }
             ]
         ];
@@ -270,33 +222,6 @@ class BlueprintPagesSection extends BlueprintSection
 
         $this->templates = $templates;
         return $this;
-    }
-
-    public function sort(string $id, string $status, int $position = null)
-    {
-        if (in_array($this->status(), ['all', 'published']) === true) {
-            $status = 'listed';
-        }
-
-        $page = $this->parent()->children()->findBy('id', $id);
-
-        if ($page === null) {
-            $page = $this->parent()->drafts()->findBy('id', $id);
-        }
-
-        if (is_a($page, Page::class) === false) {
-            throw new LogicException([
-                'key' => 'page.sort.section.type'
-            ]);
-        }
-
-        if (empty($this->templates()) === false && in_array($page->template(), $this->templates()) === false) {
-            throw new LogicException([
-                'key' => 'page.sort.section.template.invalid'
-            ]);
-        }
-
-        return $page->changeStatus($status, $position);
     }
 
     public function sortable(): bool

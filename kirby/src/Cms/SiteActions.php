@@ -2,6 +2,8 @@
 
 namespace Kirby\Cms;
 
+use Closure;
+use Kirby\Data\Data;
 use Kirby\Toolkit\Str;
 
 trait SiteActions
@@ -20,15 +22,16 @@ trait SiteActions
      * @param mixed ...$arguments
      * @return mixed
      */
-    protected function commit(string $action, ...$arguments)
+    protected function commit(string $action, array $arguments, Closure $callback)
     {
-        $old = $this->hardcopy();
+        $old   = $this->hardcopy();
+        $kirby = $this->kirby();
 
-        $this->rules()->$action($this, ...$arguments);
-        $this->kirby()->trigger('site.' . $action . ':before', $this, ...$arguments);
-        $result = $this->store()->$action(...$arguments);
-        $this->kirby()->trigger('site.' . $action . ':after', $result, $old);
-        $this->kirby()->cache('pages')->flush();
+        $this->rules()->$action(...$arguments);
+        $kirby->trigger('site.' . $action . ':before', ...$arguments);
+        $result = $callback(...$arguments);
+        $kirby->trigger('site.' . $action . ':after', $result, $old);
+        $kirby->cache('pages')->flush();
         return $result;
     }
 
@@ -44,14 +47,21 @@ trait SiteActions
             return $this;
         }
 
-        return $this->commit('changeTitle', $title);
+        return $this->commit('changeTitle', [$this, $title], function ($site, $title) {
+            $content = $site
+                ->content()
+                ->update(['title' => $title])
+                ->toArray();
+
+            return $site->clone(['content' => $content])->save();
+        });
     }
 
     /**
      * Creates a main page
      *
      * @param array $props
-     * @return self
+     * @return Page
      */
     public function createChild(array $props)
     {
@@ -60,17 +70,21 @@ trait SiteActions
             'num'    => null,
             'parent' => null,
             'site'   => $this,
-            'store'  => $this->store()::PAGE_STORE_CLASS,
         ]);
 
         return Page::create($props);
     }
 
+    /**
+     * Creates a site file
+     *
+     * @param array $props
+     * @return File
+     */
     public function createFile(array $props)
     {
         $props = array_merge($props, [
             'parent' => $this,
-            'store'  => $this->store()::FILE_STORE_CLASS,
             'url'    => null
         ]);
 
@@ -86,5 +100,53 @@ trait SiteActions
         $this->blueprint = null;
 
         return $this;
+    }
+
+    /**
+     * Stores the file meta content on disk
+     *
+     * @return self
+     */
+    public function save(): self
+    {
+        if ($this->exists() === false) {
+            return $this;
+        }
+
+        Data::write($this->contentFile(), $this->content()->toArray());
+        return $this;
+    }
+
+    /**
+     * Updates the model data
+     *
+     * @param array $input
+     * @param boolean $validate
+     * @return self
+     */
+    public function update(array $input = null, bool $validate = true): self
+    {
+        $form = Form::for($this, [
+            'values' => $input
+        ]);
+
+        // validate the input
+        if ($validate === true) {
+            if ($form->isInvalid() === true) {
+                throw new InvalidArgumentException([
+                    'fallback' => 'Invalid form with errors',
+                    'details'  => $form->errors()
+                ]);
+            }
+        }
+
+        return $this->commit('update', [$this, $form->values(), $form->strings()], function ($site, $values, $strings) {
+            $content = $site
+                ->content()
+                ->update($strings)
+                ->toArray();
+
+            return $site->clone(['content' => $content])->save();
+        });
     }
 }

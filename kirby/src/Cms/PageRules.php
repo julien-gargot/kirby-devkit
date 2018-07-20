@@ -203,11 +203,7 @@ class PageRules
             throw new PermissionException(['key' => 'page.delete.permission']);
         }
 
-        if ($page->exists() === false) {
-            throw new NotFoundException(['key' => 'page.undefined']);
-        }
-
-        if ($page->hasChildren() === true && $force === false) {
+        if (($page->hasChildren() === true || $page->hasDrafts() === true) && $force === false) {
             throw new LogicException(['key' => 'page.delete.hasChildren']);
         }
 

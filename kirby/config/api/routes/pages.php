@@ -43,6 +43,13 @@ return [
         }
     ],
     [
+        'pattern' => 'pages/(:any)/children',
+        'method'  => 'POST',
+        'action'  => function (string $id) {
+            return $this->page($id)->createChild($this->requestBody());
+        }
+    ],
+    [
         'pattern' => 'pages/(:any)/children/search',
         'method'  => 'POST',
         'action'  => function (string $id) {
@@ -54,6 +61,19 @@ return [
         'method'  => 'GET',
         'action'  => function (string $id) {
             return $this->page($id)->files();
+        }
+    ],
+    [
+        'pattern' => 'pages/(:any)/files',
+        'method'  => 'POST',
+        'action'  => function (string $id) {
+            return $this->upload(function ($source, $filename) use ($id) {
+                return $this->page($id)->createFile([
+                    'source'   => $source,
+                    'template' => $this->requestBody('template'),
+                    'filename' => $filename
+                ]);
+            });
         }
     ],
     [
