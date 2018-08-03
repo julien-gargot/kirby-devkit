@@ -9,6 +9,7 @@ use Kirby\Api\Api;
 use Kirby\Data\Data;
 use Kirby\Email\PHPMailer as Emailer;
 use Kirby\Exception\InvalidArgumentException;
+use Kirby\Exception\LogicException;
 use Kirby\Form\Field;
 use Kirby\Http\Router;
 use Kirby\Http\Request;
@@ -17,32 +18,37 @@ use Kirby\Http\Visitor;
 use Kirby\Image\Darkroom;
 use Kirby\Session\AutoSession as Session;
 use Kirby\Text\KirbyTag;
-use Kirby\Toolkit\Url;
-use Kirby\Toolkit\Url\Query as UrlQuery;
 use Kirby\Toolkit\Controller;
 use Kirby\Toolkit\F;
 use Kirby\Toolkit\Dir;
+use Kirby\Toolkit\Properties;
 use Kirby\Toolkit\Str;
+use Kirby\Toolkit\Url;
 
 /**
  * The App object is a big-ass monolith that's
  * in the center between all the other CMS classes.
  * It's the $kirby object in templates and handles
  */
-class App extends Component
+class App
 {
     use AppCaches;
     use AppErrors;
-    use AppOptions;
     use AppPlugins;
     use AppTranslations;
     use AppUsers;
+    use Properties;
 
     protected static $instance;
     protected static $root;
     protected static $version;
 
+    public $data = [];
+    public $language;
+
     protected $collections;
+    protected $languages;
+    protected $options;
     protected $path;
     protected $roles;
     protected $roots;
@@ -71,7 +77,7 @@ class App extends Component
         $this->bakeRoots($props['roots'] ?? []);
 
         // stuff from config and additional options
-        $this->optionsFromSystem();
+        $this->optionsFromConfig();
         $this->optionsFromProps($props['options'] ?? []);
 
         // create all urls after the config, so possible
@@ -79,22 +85,47 @@ class App extends Component
         $this->bakeUrls($props['urls'] ?? []);
 
         // configurable properties
-        $this->setProperties($props);
+        $this->setOptionalProperties($props, [
+            'path',
+            'roles',
+            'site',
+            'user',
+            'users'
+        ]);
 
-        // load the english translation
-        $this->loadFallbackTranslation();
+        // setup the I18n class with the translation loader
+        $this->i18n();
 
         // load all extensions
         $this->extensionsFromSystem();
         $this->extensionsFromProps($props);
-        $this->extensionsFromOptions();
         $this->extensionsFromPlugins();
+        $this->extensionsFromOptions();
+        $this->extensionsFromFolders();
 
         // handle those damn errors
         $this->handleErrors();
 
         // set the singleton
         static::$instance = $this;
+    }
+
+    /**
+     * Improved var_dump output
+     *
+     * @return array
+     */
+    public function __debuginfo(): array
+    {
+        return [
+            'languages' => $this->languages(),
+            'options'   => $this->options(),
+            'request'   => $this->request(),
+            'roots'     => $this->roots(),
+            'site'      => $this->site(),
+            'urls'      => $this->urls(),
+            'version'   => $this->version(),
+        ];
     }
 
     /**
@@ -203,21 +234,54 @@ class App extends Component
      * @param array $arguments
      * @return array
      */
-    public function controller(string $name, array $arguments = []): array
+    public function controller(string $name, array $arguments = [], string $contentType = 'html'): array
     {
         $name = basename(strtolower($name));
 
-        // site controller
-        if ($controller = Controller::load($this->root('controllers') . '/' . $name . '.php')) {
+        if ($controller = $this->controllerLookup($name, $contentType)) {
             return (array)$controller->call($this, $arguments);
         }
 
-        // registry controller
-        if ($controller = $this->extension('controllers', $name)) {
+        if ($contentType !== 'html') {
+
+            // no luck for a specific representation controller?
+            // let's try the html controller instead
+            if ($controller = $this->controllerLookup($name)) {
+                return (array)$controller->call($this, $arguments);
+            }
+        }
+
+        // still no luck? Let's take the site controller
+        if ($controller = $this->controllerLookup('site')) {
             return (array)$controller->call($this, $arguments);
         }
 
         return [];
+    }
+
+    /**
+     * Try to find a controller by name
+     *
+     * @param string $name
+     * @return Closure|null
+     */
+    protected function controllerLookup(string $name, string $contentType = 'html'): ?Controller
+    {
+        if ($contentType !== null && $contentType !== 'html') {
+            $name .= '.' . $contentType;
+        }
+
+        // controller on disk
+        if ($controller = Controller::load($this->root('controllers') . '/' . $name . '.php')) {
+            return $controller;
+        }
+
+        // registry controller
+        if ($controller = $this->extension('controllers', $name)) {
+            return is_a($controller, Controller::class) ? $controller : new Controller($controller);
+        }
+
+        return null;
     }
 
     /**
@@ -328,6 +392,31 @@ class App extends Component
     }
 
     /**
+     * Returns the current language
+     *
+     * @param string|null $code
+     * @return Language|null
+     */
+    public function language(string $code = null): ?Language
+    {
+        if ($code !== null) {
+            return $this->languages()->find($code);
+        }
+
+        return $this->language = $this->language ?? $this->languages()->findDefault();
+    }
+
+    /**
+     * Returns all available site languages
+     *
+     * @return Languages
+     */
+    public function languages(): Languages
+    {
+        return $this->languages = $this->languages ?? Languages::load();
+    }
+
+    /**
      * Parses Markdown
      *
      * @param string $text
@@ -336,6 +425,55 @@ class App extends Component
     public function markdown(string $text = null): string
     {
         return $this->extensions['components']['markdown']($this, $text, $this->options['markdown'] ?? []);
+    }
+
+    /**
+     * Load a specific configuration option
+     *
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    public function option(string $key, $default = null)
+    {
+        return $this->options[$key] ?? $default;
+    }
+
+    /**
+     * Returns all configuration options
+     *
+     * @return array
+     */
+    public function options(): array
+    {
+        return $this->options;
+    }
+
+    /**
+     * Inject options from Kirby instance props
+     *
+     * @return array
+     */
+    protected function optionsFromProps(array $options = [])
+    {
+        return $this->options = array_replace_recursive($this->options, $options);
+    }
+
+    /**
+     * Load all options from files in site/config
+     *
+     * @return array
+     */
+    protected function optionsFromConfig(): array
+    {
+        $server = $this->server();
+        $root   = $this->root('config');
+
+        $main = (array)F::load($root . '/config.php', []);
+        $host = (array)F::load($root . '/config.' . basename($server->host()) . '.php', []);
+        $addr = (array)F::load($root . '/config.' . basename($server->address()) . '.php', []);
+
+        return $this->options = array_replace_recursive($main, $host, $addr);
     }
 
     /**
@@ -377,12 +515,7 @@ class App extends Component
             return $this->path;
         }
 
-        // check for path detection requirements
-        if (isset($_SERVER['REQUEST_URI'], $_SERVER['SCRIPT_NAME']) === false) {
-            throw new InvalidArgumentException('The current path cannot be detected');
-        }
-
-        $requestUri  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $requestUri  = '/' . $this->request()->url()->path();
         $scriptName  = $_SERVER['SCRIPT_NAME'];
         $scriptFile  = basename($scriptName);
         $scriptDir   = dirname($scriptName);
@@ -411,6 +544,57 @@ class App extends Component
     public function request(): Request
     {
         return $this->request = $this->request ?? new Request;
+    }
+
+    /**
+     * Path resolver for the router
+     *
+     * @param string $path
+     * @param Language $language
+     * @return mixed
+     */
+    public function resolve(string $path, Language $language = null)
+    {
+        // set the current language
+        $this->language = $language;
+
+        // the site is needed a couple times here
+        $site = $this->site();
+
+        if ($page = $site->find($path)) {
+            return $page;
+        }
+
+        if ($draft = $site->draft($path)) {
+            if ($draft->isVerified(get('token'))) {
+                return $draft;
+            }
+        }
+
+        // try to resolve content representations if the path has an extension
+        $extension = F::extension($path);
+        $path      = rtrim($path, '.' . $extension);
+
+        // stop when there's no extension
+        if (empty($extension) === true) {
+            return null;
+        }
+
+        // try to find the page for the representation
+        if ($page = $site->find($path)) {
+            return Response::for($page, [], $extension);
+        }
+
+        $id       = dirname($path);
+        $filename = basename($path) . '.' . $extension;
+
+        // try to resolve image urls for pages and drafts
+        if ($page = $site->findPageOrDraft($id)) {
+            return $page->file($filename);
+        }
+
+        // try to resolve site files at least
+        return $site->file($filename);
     }
 
     /**
@@ -586,9 +770,9 @@ class App extends Component
     /**
      * @return Snippet
      */
-    public function snippet(string $name, array $data = []): Snippet
+    public function snippet(string $name, array $data = []): ?string
     {
-        return $this->extensions['components']['snippet']($this, $name, $data);
+        return $this->extensions['components']['snippet']($this, $name, array_merge($this->data, $data));
     }
 
     /**
@@ -604,9 +788,9 @@ class App extends Component
     /**
      * @return Template
      */
-    public function template(string $name, array $data = [], string $appendix = null): Template
+    public function template(string $name, string $type = 'html'): Template
     {
-        return $this->extensions['components']['template']($this, $name, $data, $appendix);
+        return $this->extensions['components']['template']($this, $name, $type);
     }
 
     /**

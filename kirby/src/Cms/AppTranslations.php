@@ -9,44 +9,23 @@ trait AppTranslations
     protected $translations;
 
     /**
-     * Loads the fallback translation and
-     * runs the I18n setup.
+     * Setup internationalization
      *
      * @return void
      */
-    protected function loadFallbackTranslation()
+    protected function i18n()
     {
-        I18n::$locale   = 'en';
-        I18n::$fallback = I18n::$translation = $this->translation(I18n::$locale)->data();
-    }
+        I18n::$load = function ($locale) {
+            if ($translation = $this->translation($locale)) {
+                return $translation->data();
+            }
 
-    /**
-     * Loads the user translation
-     *
-     * @param string $locale
-     * @return void
-     */
-    protected function loadTranslation(string $locale)
-    {
-        if ($locale !== I18n::$locale && $translation = $this->translation($locale)) {
-            I18n::$locale      = $locale;
-            I18n::$translation = $translation->data();
-        }
-    }
+            return $translations[$locale] ?? [];
+        };
 
-    /**
-     * Create your own set of translations
-     *
-     * @param array $translations
-     * @return self
-     */
-    protected function setTranslations(array $translations = null): self
-    {
-        if ($translations !== null) {
-            $this->translations = Translations::factory($translations);
-        }
-
-        return $this;
+        I18n::$locale       = 'en';
+        I18n::$fallback     = 'en';
+        I18n::$translations = [];
     }
 
     /**
@@ -61,14 +40,17 @@ trait AppTranslations
         $locale = basename($locale);
 
         // prefer loading them from the translations collection
-        if (is_a($this->translations, Translations::class) === true) {
+        if (is_a($this->translations, 'Kirby\Cms\Translations') === true) {
             if ($translation = $this->translations()->find($locale)) {
                 return $translation;
             }
         }
 
+        // get injected translation data from plugins etc.
+        $inject = $this->extensions['translations'][$locale] ?? [];
+
         // load from disk instead
-        return Translation::load($locale, $this->root('translations') . '/' . $locale . '.json');
+        return Translation::load($locale, $this->root('translations') . '/' . $locale . '.json', $inject);
     }
 
     /**
@@ -78,10 +60,10 @@ trait AppTranslations
      */
     public function translations()
     {
-        if (is_a($this->translations, Translations::class) === true) {
+        if (is_a($this->translations, 'Kirby\Cms\Translations') === true) {
             return $this->translations;
         }
 
-        return Translations::load($this->root('translations'));
+        return Translations::load($this->root('translations'), $this->extensions['translations'] ?? []);
     }
 }

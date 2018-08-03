@@ -13,8 +13,6 @@ use Kirby\Toolkit\F;
  */
 class Translations extends Collection
 {
-    protected static $accept = Translation::class;
-
     public static function factory(array $translations)
     {
         $collection = new static;
@@ -27,7 +25,7 @@ class Translations extends Collection
         return $collection;
     }
 
-    public static function load(string $root)
+    public static function load(string $root, array $inject = [])
     {
         $collection = new static;
 
@@ -36,8 +34,10 @@ class Translations extends Collection
                 continue;
             }
 
-            $translation = Translation::load($code = F::name($filename), $root . '/' . $filename);
-            $collection->data[$code] = $translation;
+            $locale      = F::name($filename);
+            $translation = Translation::load($locale, $root . '/' . $filename, $inject[$locale] ?? []);
+
+            $collection->data[$locale] = $translation;
         }
 
         return $collection;

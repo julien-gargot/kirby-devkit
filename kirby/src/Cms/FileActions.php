@@ -24,7 +24,7 @@ trait FileActions
     public function changeName(string $name, bool $sanitize = true): self
     {
         if ($sanitize === true) {
-            $name = Str::slug($name);
+            $name = F::safeName($name);
         }
 
         // don't rename if not necessary
@@ -58,6 +58,24 @@ trait FileActions
             $newFile->publish();
 
             return $newFile;
+        });
+    }
+
+    /**
+     * Changes the file's sorting number in the meta file
+     *
+     * @param integer $sort
+     * @return self
+     */
+    public function changeSort(int $sort)
+    {
+        return $this->commit('changeSort', [$this, $sort], function ($file, $sort) {
+            $content = $file
+                ->content()
+                ->update(['sort' => $sort])
+                ->toArray();
+
+            return $file->clone(['content' => $content])->save();
         });
     }
 
@@ -103,11 +121,11 @@ trait FileActions
         }
 
         // prefer the filename from the props
-        $props['filename'] = $props['filename'] ?? basename($props['source']);
+        $props['filename'] = F::safeName($props['filename'] ?? basename($props['source']));
 
         // create the basic file and a test upload object
         $file   = new static($props);
-        $upload = new Upload($props['source']);
+        $upload = new Image($props['source']);
 
         return $file->commit('create', [$file, $upload], function ($file, $upload) {
 
@@ -124,6 +142,9 @@ trait FileActions
 
             // create a new public file
             $file->publish();
+
+            // add the file to the list of siblings
+            $file->siblings()->append($file->id(), $file);
 
             // return a fresh clone
             return $file->clone();
@@ -161,6 +182,18 @@ trait FileActions
     }
 
     /**
+     * Alias for changeName
+     *
+     * @param string $name
+     * @param bool $sanitize
+     * @return self
+     */
+    public function rename(string $name, bool $sanitize = true)
+    {
+        return $this->changeName($name, $sanitize);
+    }
+
+    /**
      * Replaces the file. The source must
      * be an absolute path to a file or a Url.
      * The store handles the replacement so it
@@ -172,7 +205,7 @@ trait FileActions
      */
     public function replace(string $source): self
     {
-        return $this->commit('replace', [$this, new Upload($source)], function ($file, $upload) {
+        return $this->commit('replace', [$this, new Image($source)], function ($file, $upload) {
 
             // delete all public versions
             $file->unpublish();

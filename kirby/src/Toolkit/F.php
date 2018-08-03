@@ -520,11 +520,12 @@ class F
      */
     public static function safeName(string $string): string
     {
-        $name      = static::name($string);
-        $extension = static::extension($string);
-        $end       = empty($extension) === false ? '.' . Str::slug($extension) : '';
+        $name          = static::name($string);
+        $extension     = static::extension($string);
+        $safeName      = Str::slug($name, '-', 'a-z0-9@._-');
+        $safeExtension = empty($extension) === false ? '.' . Str::slug($extension) : '';
 
-        return Str::slug($name, '-', 'a-z0-9@._-') . $end;
+        return $safeName . $safeExtension;
     }
 
     /**

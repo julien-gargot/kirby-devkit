@@ -4,20 +4,22 @@ namespace Kirby\Cms;
 
 use stdClass;
 use ReflectionMethod;
+use Kirby\Toolkit\Properties;
 use Kirby\Toolkit\Str;
 
 /**
  * Foundation for Page, Site, File and User models.
  */
-abstract class Model extends Component
+abstract class Model
 {
+    use Properties;
 
     /**
      * The parent collection
      *
      * @var Collection
      */
-    protected $collection;
+    public $collection;
 
     /**
      * The parent Kirby instance
@@ -110,5 +112,15 @@ abstract class Model extends Component
     {
         $this->site = $site;
         return $this;
+    }
+
+    /**
+     * Convert the model to a simple array
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return $this->propertiesToArray();
     }
 }

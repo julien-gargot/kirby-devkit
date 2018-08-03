@@ -28,6 +28,13 @@ class Field
 {
 
     /**
+     * Field method aliases
+     *
+     * @var array
+     */
+    public static $aliases = [];
+
+    /**
      * The field name
      *
      * @var string
@@ -70,6 +77,14 @@ class Field
             return static::$methods[$method](clone $this, ...$arguments);
         }
 
+        if (isset(static::$aliases[$method]) === true) {
+            $method = static::$aliases[$method];
+
+            if (isset(static::$methods[$method]) === true) {
+                return static::$methods[$method](clone $this, ...$arguments);
+            }
+        }
+
         return $this;
     }
 
@@ -110,6 +125,25 @@ class Field
         return $this->toString();
     }
 
+    /**
+     * Checks if the field content is empty
+     *
+     * @return boolean
+     */
+    public function isEmpty(): bool
+    {
+        return empty($this->value) === true;
+    }
+
+    /**
+     * Checks if the field content is not empty
+     *
+     * @return boolean
+     */
+    public function isNotEmpty(): bool
+    {
+        return empty($this->value) === false;
+    }
 
     /**
      * Returns the name of the field
@@ -119,6 +153,26 @@ class Field
     public function key(): string
     {
         return $this->key;
+    }
+
+    /**
+     * Provides a fallback if the field value is empty
+     *
+     * @param mixed $fallback
+     * @return self
+     */
+    public function or($fallback = null)
+    {
+        if ($this->isNotEmpty()) {
+            return $this;
+        }
+
+        if (is_a($fallback, 'Kirby\Cms\Field') === true) {
+            return $fallback;
+        }
+
+        $this->value = $fallback;
+        return $this;
     }
 
     /**

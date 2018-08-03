@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "3028bc0690ecbcfc4efd9a9b30cf65d8",
-    "content-hash": "bb0ede88c7c4bd4401e0966c1d45b90e",
+    "hash": "71ba22eae4409369c69350b77985365f",
+    "content-hash": "a6832cd832ead9a21e64493a4f200215",
     "packages": [
         {
             "name": "claviska/simpleimage",
@@ -48,21 +48,21 @@
         },
         {
             "name": "defuse/php-encryption",
-            "version": "v2.2.0",
+            "version": "v2.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/defuse/php-encryption.git",
-                "reference": "0d4d27c368ca6798bc162469e43248c363c73495"
+                "reference": "0f407c43b953d571421e0020ba92082ed5fb7620"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/defuse/php-encryption/zipball/0d4d27c368ca6798bc162469e43248c363c73495",
-                "reference": "0d4d27c368ca6798bc162469e43248c363c73495",
+                "url": "https://api.github.com/repos/defuse/php-encryption/zipball/0f407c43b953d571421e0020ba92082ed5fb7620",
+                "reference": "0f407c43b953d571421e0020ba92082ed5fb7620",
                 "shasum": ""
             },
             "require": {
                 "ext-openssl": "*",
-                "paragonie/random_compat": "~2.0",
+                "paragonie/random_compat": ">= 2",
                 "php": ">=5.4.0"
             },
             "require-dev": {
@@ -107,7 +107,7 @@
                 "security",
                 "symmetric key cryptography"
             ],
-            "time": "2018-04-23 19:33:40"
+            "time": "2018-07-24 23:27:56"
         },
         {
             "name": "erusev/parsedown",
@@ -979,12 +979,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/FriendsOfPHP/PHP-CS-Fixer.git",
-                "reference": "50b5e05034bfb0ef334b970da10a701d6675c94e"
+                "reference": "b38da665fb73a25cdbc8311b439b7298fb50911c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/FriendsOfPHP/PHP-CS-Fixer/zipball/50b5e05034bfb0ef334b970da10a701d6675c94e",
-                "reference": "50b5e05034bfb0ef334b970da10a701d6675c94e",
+                "url": "https://api.github.com/repos/FriendsOfPHP/PHP-CS-Fixer/zipball/b38da665fb73a25cdbc8311b439b7298fb50911c",
+                "reference": "b38da665fb73a25cdbc8311b439b7298fb50911c",
                 "shasum": ""
             },
             "require": {
@@ -1067,7 +1067,7 @@
                 }
             ],
             "description": "A tool to automatically fix PHP code style",
-            "time": "2018-07-12 13:35:03"
+            "time": "2018-08-01 07:09:04"
         },
         {
             "name": "myclabs/deep-copy",
@@ -1428,12 +1428,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpspec/prophecy.git",
-                "reference": "dcf425ffc656e958ebf9780b796072e3daf44614"
+                "reference": "dbfc2600dee41b0ca3786f274bc1287d85d1c8bf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/dcf425ffc656e958ebf9780b796072e3daf44614",
-                "reference": "dcf425ffc656e958ebf9780b796072e3daf44614",
+                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/dbfc2600dee41b0ca3786f274bc1287d85d1c8bf",
+                "reference": "dbfc2600dee41b0ca3786f274bc1287d85d1c8bf",
                 "shasum": ""
             },
             "require": {
@@ -1483,7 +1483,7 @@
                 "spy",
                 "stub"
             ],
-            "time": "2018-07-18 09:55:46"
+            "time": "2018-07-31 07:47:46"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -1740,12 +1740,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "2d53bd5ae8ec6f81bb3be9d397f1f4cfac69ff97"
+                "reference": "5744955af9c0a2de74a5eb5287c50bf025100d39"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/2d53bd5ae8ec6f81bb3be9d397f1f4cfac69ff97",
-                "reference": "2d53bd5ae8ec6f81bb3be9d397f1f4cfac69ff97",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/5744955af9c0a2de74a5eb5287c50bf025100d39",
+                "reference": "5744955af9c0a2de74a5eb5287c50bf025100d39",
                 "shasum": ""
             },
             "require": {
@@ -1816,7 +1816,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2018-07-19 06:58:00"
+            "time": "2018-08-03 05:27:14"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -2442,12 +2442,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/console.git",
-                "reference": "1c70c40179c51bf22d3e71ece107272566a82f29"
+                "reference": "1ed8ba31403db259af03c7559f000beadd287314"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/console/zipball/1c70c40179c51bf22d3e71ece107272566a82f29",
-                "reference": "1c70c40179c51bf22d3e71ece107272566a82f29",
+                "url": "https://api.github.com/repos/symfony/console/zipball/1ed8ba31403db259af03c7559f000beadd287314",
+                "reference": "1ed8ba31403db259af03c7559f000beadd287314",
                 "shasum": ""
             },
             "require": {
@@ -2503,7 +2503,7 @@
             ],
             "description": "Symfony Console Component",
             "homepage": "https://symfony.com",
-            "time": "2018-07-16 14:05:48"
+            "time": "2018-07-26 11:25:51"
         },
         {
             "name": "symfony/contracts",
@@ -2568,12 +2568,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/event-dispatcher.git",
-                "reference": "b2ddcd44764896bfdeec3c5ef2a2eb00eee8478a"
+                "reference": "d8eb135cc2886e01e829f4fd6be148342de39454"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/b2ddcd44764896bfdeec3c5ef2a2eb00eee8478a",
-                "reference": "b2ddcd44764896bfdeec3c5ef2a2eb00eee8478a",
+                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/d8eb135cc2886e01e829f4fd6be148342de39454",
+                "reference": "d8eb135cc2886e01e829f4fd6be148342de39454",
                 "shasum": ""
             },
             "require": {
@@ -2624,7 +2624,7 @@
             ],
             "description": "Symfony EventDispatcher Component",
             "homepage": "https://symfony.com",
-            "time": "2018-07-16 14:05:48"
+            "time": "2018-07-26 09:13:01"
         },
         {
             "name": "symfony/filesystem",
@@ -2632,12 +2632,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/filesystem.git",
-                "reference": "87d17aa4b6ed33ed85a7ae3442f3c7ba3d8beaf8"
+                "reference": "15754f6a1ccc88b14be99092299338004a4c8575"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/filesystem/zipball/87d17aa4b6ed33ed85a7ae3442f3c7ba3d8beaf8",
-                "reference": "87d17aa4b6ed33ed85a7ae3442f3c7ba3d8beaf8",
+                "url": "https://api.github.com/repos/symfony/filesystem/zipball/15754f6a1ccc88b14be99092299338004a4c8575",
+                "reference": "15754f6a1ccc88b14be99092299338004a4c8575",
                 "shasum": ""
             },
             "require": {
@@ -2674,7 +2674,7 @@
             ],
             "description": "Symfony Filesystem Component",
             "homepage": "https://symfony.com",
-            "time": "2018-05-31 10:18:23"
+            "time": "2018-07-26 11:25:51"
         },
         {
             "name": "symfony/finder",
@@ -2682,12 +2682,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/finder.git",
-                "reference": "31e8fe0c8e55ec05508c3f85e85f11e4b094ca9d"
+                "reference": "e85fcc2297c61b09193d17ac606413cedf2092c7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/finder/zipball/31e8fe0c8e55ec05508c3f85e85f11e4b094ca9d",
-                "reference": "31e8fe0c8e55ec05508c3f85e85f11e4b094ca9d",
+                "url": "https://api.github.com/repos/symfony/finder/zipball/e85fcc2297c61b09193d17ac606413cedf2092c7",
+                "reference": "e85fcc2297c61b09193d17ac606413cedf2092c7",
                 "shasum": ""
             },
             "require": {
@@ -2723,7 +2723,7 @@
             ],
             "description": "Symfony Finder Component",
             "homepage": "https://symfony.com",
-            "time": "2018-07-16 12:56:42"
+            "time": "2018-07-26 11:25:51"
         },
         {
             "name": "symfony/options-resolver",
@@ -2731,12 +2731,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/options-resolver.git",
-                "reference": "433e2f9db2d4f6edfe1068ae7017ed23c10499ae"
+                "reference": "0e4fd9354a31e862240675ad30a26a53cad0a681"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/options-resolver/zipball/433e2f9db2d4f6edfe1068ae7017ed23c10499ae",
-                "reference": "433e2f9db2d4f6edfe1068ae7017ed23c10499ae",
+                "url": "https://api.github.com/repos/symfony/options-resolver/zipball/0e4fd9354a31e862240675ad30a26a53cad0a681",
+                "reference": "0e4fd9354a31e862240675ad30a26a53cad0a681",
                 "shasum": ""
             },
             "require": {
@@ -2777,7 +2777,7 @@
                 "configuration",
                 "options"
             ],
-            "time": "2018-07-07 16:01:39"
+            "time": "2018-07-26 08:59:12"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -2957,12 +2957,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/process.git",
-                "reference": "d6f417d21efe2a2b91c0c8a19d938c5db18d81d3"
+                "reference": "ce937c3c524746b8fdb603683945f760855175da"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/process/zipball/d6f417d21efe2a2b91c0c8a19d938c5db18d81d3",
-                "reference": "d6f417d21efe2a2b91c0c8a19d938c5db18d81d3",
+                "url": "https://api.github.com/repos/symfony/process/zipball/ce937c3c524746b8fdb603683945f760855175da",
+                "reference": "ce937c3c524746b8fdb603683945f760855175da",
                 "shasum": ""
             },
             "require": {
@@ -2998,7 +2998,7 @@
             ],
             "description": "Symfony Process Component",
             "homepage": "https://symfony.com",
-            "time": "2018-07-06 18:45:13"
+            "time": "2018-08-03 11:20:06"
         },
         {
             "name": "symfony/stopwatch",
@@ -3006,12 +3006,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/stopwatch.git",
-                "reference": "e656f8243ff25f65737cd1aa368fe9cf84855b5e"
+                "reference": "6037c66d94119fb76907c461a4bfb3a31e74ae66"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/stopwatch/zipball/e656f8243ff25f65737cd1aa368fe9cf84855b5e",
-                "reference": "e656f8243ff25f65737cd1aa368fe9cf84855b5e",
+                "url": "https://api.github.com/repos/symfony/stopwatch/zipball/6037c66d94119fb76907c461a4bfb3a31e74ae66",
+                "reference": "6037c66d94119fb76907c461a4bfb3a31e74ae66",
                 "shasum": ""
             },
             "require": {
@@ -3048,7 +3048,7 @@
             ],
             "description": "Symfony Stopwatch Component",
             "homepage": "https://symfony.com",
-            "time": "2018-07-13 17:06:58"
+            "time": "2018-07-26 11:01:15"
         },
         {
             "name": "theseer/tokenizer",

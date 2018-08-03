@@ -5,6 +5,7 @@ namespace Kirby\Cms;
 use Closure;
 use Kirby\Exception\InvalidArgumentException;
 use Kirby\Toolkit\Collection as BaseCollection;
+use Kirby\Toolkit\Str;
 
 /**
  * The Collection class serves as foundation
@@ -22,13 +23,22 @@ use Kirby\Toolkit\Collection as BaseCollection;
  */
 class Collection extends BaseCollection
 {
+    use HasMethods;
 
     /**
-     * Accepts any extension of the Object class
+     * Magic getter function
      *
-     * @var string
+     * @param  string $key
+     * @param  mixed  $arguments
+     * @return mixed
      */
-    protected static $accept = Model::class;
+    public function __call(string $key, $arguments)
+    {
+        // collection methods
+        if ($this->hasMethod($key)) {
+            return $this->callMethod($key, $arguments);
+        }
+    }
 
     /**
      * Stores the parent object, which is needed
@@ -60,14 +70,9 @@ class Collection extends BaseCollection
      */
     public function __set(string $id, $object)
     {
-        if (is_a($object, static::$accept) === false) {
-            throw new InvalidArgumentException('Invalid object in collection. Accepted: ' . static::$accept);
-        }
-
         // inject the collection for proper navigation
-        $object->setCollection($this);
-
-        return parent::__set($object->id(), $object);
+        $object->collection = $this;
+        $this->data[$object->id()] = $object;
     }
 
     /**
@@ -81,6 +86,58 @@ class Collection extends BaseCollection
     public function getAttribute($object, $prop)
     {
         return (string)$object->$prop();
+    }
+
+    /**
+     * Groups the items by a given field
+     *
+     * @param string $field
+     * @param bool   $i (ignore upper/lowercase for group names)
+     * @return Collection A collection with an item for each group and a Collection for each group
+     */
+    public function groupBy(string $field, bool $i = true)
+    {
+        $groups = new Collection([], $this->parent());
+
+        foreach ($this->data as $key => $item) {
+            $value = $this->getAttribute($item, $field);
+
+            // make sure that there's always a proper value to group by
+            if (!$value) {
+                throw new InvalidArgumentException('Invalid grouping value for key: ' . $key);
+            }
+
+            // ignore upper/lowercase for group names
+            if ($i) {
+                $value = Str::lower($value);
+            }
+
+            if (isset($groups->data[$value]) === false) {
+                // create a new entry for the group if it does not exist yet
+                $groups->data[$value] = new static([$key => $item]);
+            } else {
+                // add the item to an existing group
+                $groups->data[$value]->set($key, $item);
+            }
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Checks if the given object or id
+     * is in the collection
+     *
+     * @param string|object
+     * @return boolean
+     */
+    public function has($id): bool
+    {
+        if (is_object($id) === true) {
+            $id = $id->id();
+        }
+
+        return parent::has($id);
     }
 
     /**
@@ -110,7 +167,7 @@ class Collection extends BaseCollection
     {
         $collection = $this->clone();
         foreach ($keys as $key) {
-            if (is_a($key, static::$accept)) {
+            if (is_object($key) === true) {
                 $key = $key->id();
             }
             unset($collection->$key);

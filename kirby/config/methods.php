@@ -10,6 +10,7 @@ use Kirby\Data\Json;
 use Kirby\Data\Yaml;
 use Kirby\Toolkit\Str;
 use Kirby\Toolkit\V;
+use Kirby\Toolkit\Xml;
 
 /**
  * Field method setup
@@ -19,14 +20,8 @@ return function (App $app) {
     return [
 
         // states
-        'isEmpty' => function ($field) {
-            return empty($field->value);
-        },
         'isFalse' => function ($field) {
             return $field->toBool() === false;
-        },
-        'isNotEmpty' => function ($field) {
-            return $field->isEmpty() === false;
         },
         'isTrue' => function ($field) {
             return $field->toBool() === true;
@@ -56,9 +51,6 @@ return function (App $app) {
             }
 
             return null;
-        },
-        'toExcerpt' => function ($field) {
-            return $field;
         },
         'toFile' => function ($field) {
             return $field->parent()->file($field->value);
@@ -109,10 +101,14 @@ return function (App $app) {
         'length' => function ($field) {
             return Str::length($field->value);
         },
+        'words' => function ($field) {
+            return str_word_count(strip_tags($field->value));
+        },
 
         // manipulators
-        'escape' => function ($field) {
-            throw new Exception('Not implemented yet');
+        'excerpt' => function ($field, int $chars = 0, bool $strip = true, string $rep = '…') {
+            $field->value = Str::excerpt($field->value, $chars, $strip, $rep);
+            return $field;
         },
         'html' => function ($field) {
             $field->value = htmlentities($field->value, ENT_COMPAT, 'utf-8');
@@ -142,16 +138,8 @@ return function (App $app) {
             $field->value = $app->markdown($field->value);
             return $field;
         },
-        'or' => function ($field, $fallback = null) {
-            if ($field->isNotEmpty()) {
-                return $field;
-            }
-
-            if (is_a($fallback, Field::class)) {
-                return $fallback;
-            }
-
-            $field->value = $fallback;
+        'xml' => function ($field) {
+            $field->value = Xml::encode($field->value);
             return $field;
         },
 
@@ -183,53 +171,11 @@ return function (App $app) {
             $field->value = Str::widont($field->value);
             return $field;
         },
-        'words' => function ($field) {
-            throw new Exception('Not implemented yet');
-        },
-        'xml' => function ($field) {
-            throw new Exception('Not implemented yet');
-        },
 
-        // Aliases
-        'bool' => function ($field) {
-            return $field->toBool();
-        },
-        'esc' => function ($field) {
-            return $field->escape();
-        },
-        'excerpt' => function ($field) {
-            return $field->toExcerpt();
-        },
-        'float' => function ($field) {
-            return $field->toFloat();
-        },
-        'h' => function ($field) {
-            return $field->html();
-        },
-        'int' => function ($field) {
-            return $field->toInt();
-        },
-        'kt' => function ($field) {
-            return $field->kirbytext();
-        },
-        'link' => function ($field, ...$attributes) {
-            return $field->toLink(...$attributes);
-        },
-        'md' => function ($field) {
-            return $field->markdown();
-        },
-        'sp' => function ($field) {
-            return $field->smartypants();
-        },
-        'v' => function ($field, ...$arguments) {
-            return $field->isValid(...$arguments);
-        },
+        // aliases
         'yaml' => function ($field) {
             return $field->toData('yaml');
         },
-        'x' => function ($field) {
-            return $field->xml();
-        }
 
     ];
 

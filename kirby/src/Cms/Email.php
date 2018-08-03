@@ -3,6 +3,7 @@
 namespace Kirby\Cms;
 
 use Kirby\Exception\NotFoundException;
+use Kirby\Toolkit\Tpl;
 
 /**
  * Wrapper around our PHPMailer package, which
@@ -71,21 +72,37 @@ class Email
             $data = $this->props['data'] ?? [];
 
             // check if html/text templates exist
-            $html = new EmailTemplate($this->props['template'] . '.html', $data);
-            $text = new EmailTemplate($this->props['template'] . '.text', $data);
-            if ($html->exists() === true && $text->exists() === true) {
+            $html = $this->templateFile($this->props['template'], 'html');
+            $text = $this->templateFile($this->props['template'], 'text');
+
+            if (file_exists($html) === true && file_exists($text)) {
                 $this->props['body'] = [
-                $this->props['body'] =
-                    'html' => $html->render(),
-                    'text' => $text->render()
+                    'html' => Tpl::load($html, $data),
+                    'text' => Tpl::load($text, $data)
                 ];
 
             // fallback to single email text template
             } else {
-                $template = new EmailTemplate($this->props['template'], $data);
-                $this->props['body'] = $template->render();
+                $template = $this->templateFile($this->props['template']);
+
+                if (file_exists($template) === false) {
+                    throw new NotFoundException('The email template "' . $this->props['template'] . '" cannot be found');
+                }
+
+                $this->props['body'] = Tpl::load($template, $data);
             }
         }
+    }
+
+    protected function templateFile(string $name, string $type = null): string
+    {
+        $name = basename($this->props['template']);
+
+        if ($type !== null) {
+            $name .= '.' . $type;
+        }
+
+        return App::instance()->root('emails') . '/' . $name . '.php';
     }
 
     public function toArray(): array
@@ -95,7 +112,7 @@ class Email
 
     protected function transformFile($file)
     {
-        return $this->transformModel($file, File::class, 'root');
+        return $this->transformModel($file, 'Kirby\Cms\File', 'root');
     }
 
     protected function transformModel($value, $class, $content)
@@ -111,7 +128,7 @@ class Email
         }
 
         // value is an array or collection, call transform on each item
-        if (is_array($value) === true || is_a($value, Collection::class) === true) {
+        if (is_array($value) === true || is_a($value, 'Kirby\Cms\Collection') === true) {
             $models = [];
             foreach ($value as $model) {
                 $models[] = $this->transformModel($model, $class, $content);
@@ -129,6 +146,6 @@ class Email
 
     protected function transformUser($user)
     {
-        return $this->transformModel($user, User::class, 'email');
+        return $this->transformModel($user, 'Kirby\Cms\User', 'email');
     }
 }

@@ -2,20 +2,23 @@
 
 namespace Kirby\Cms;
 
+use Kirby\Toolkit\Properties;
+
 /**
  * Foundation for all other Blueprint objects/models
  *
  * TODO: refactor this. We don't really need it.
  */
-class BlueprintObject extends Component
+class BlueprintObject
 {
+    use Properties;
 
     /**
      * The parent collection
      *
      * @var Collection
      */
-    protected $collection;
+    public $collection;
 
     /**
      * @var Page|Site|File|User
@@ -74,6 +77,11 @@ class BlueprintObject extends Component
         return $this;
     }
 
+    /**
+     * Converts the blueprint object to a simple array
+     *
+     * @return array
+     */
     public function toArray(): array
     {
         return $this->propertiesToArray();

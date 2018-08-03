@@ -26,7 +26,7 @@ trait HasChildren
      */
     public function children()
     {
-        if (is_a($this->children, Pages::class) === true) {
+        if (is_a($this->children, 'Kirby\Cms\Pages') === true) {
             return $this->children;
         }
 
@@ -62,13 +62,13 @@ trait HasChildren
      */
     public function drafts(): Pages
     {
-        if (is_a($this->drafts, Pages::class) === true) {
+        if (is_a($this->drafts, 'Kirby\Cms\Pages') === true) {
             return $this->drafts;
         }
 
         $inventory = Dir::inventory($this->root() . '/_drafts');
 
-        return $this->drafts = Pages::factory($inventory['children'], $this, PageDraft::class);
+        return $this->drafts = Pages::factory($inventory['children'], $this, 'Kirby\Cms\PageDraft');
     }
 
     /**
@@ -182,6 +182,21 @@ trait HasChildren
     {
         if ($children !== null) {
             $this->children = Pages::factory($children, $this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Sets the Drafts collection
+     *
+     * @param array|null $drafts
+     * @return self
+     */
+    protected function setDrafts(array $drafts = null)
+    {
+        if ($drafts !== null) {
+            $this->drafts = Pages::factory($drafts, $this, 'Kirby\Cms\PageDraft');
         }
 
         return $this;

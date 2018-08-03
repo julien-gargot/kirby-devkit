@@ -12,8 +12,6 @@ use Kirby\Exception\LogicException;
 
 class BlueprintPagesSection extends BlueprintSection
 {
-    const ACCEPT = Pages::class;
-
     use Mixins\BlueprintSectionHeadline;
     use Mixins\BlueprintSectionLayout;
     use Mixins\BlueprintSectionData;

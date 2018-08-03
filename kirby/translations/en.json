@@ -55,8 +55,14 @@
     "file.dimensions": "Dimensions",
     "file.dimensions.pixel": "Pixel",
     "file.orientation": "Orientation",
+    "file.orientation.landscape": "Landscape",
+    "file.orientation.portrait": "Portrait",
+    "file.orientation.square": "Square",
 
-    "page.created": "The page has been created",
+    "files.empty": "No files yet",
+
+    "page.create": "Create draft",
+    "page.created": "The draft has been created",
     "page.delete.confirm": "Do you really want to delete <br><strong>{title}</strong>?",
     "page.deleted": "The page has been deleted",
     "page.rename.fromTitle": "Create from title",
@@ -84,11 +90,13 @@
     "page.template.changed": "The template has been changed",
     "page.sorted": "Sorted!",
 
+    "pages.empty": "No pages yet",
+
     "search.noSubpages": "No subpages",
 
     "site.renamed": "The site has been renamed",
 
-    "structure.add.first": "Click to add the first item …",
+    "structure.empty": "No entries yet",
     "structure.delete.confirm": "Do you really want to delete this item?",
     "structure.discard.confirm": "Do you want to discard the new item?",
 
@@ -127,7 +135,8 @@
     "user.language.changed": "The language has been changed",
     "user.language.select": "Please select a language …",
     "user.blueprint": "You can define additional sections and form fields for this user role in <strong>/site/blueprints/users/{role}.yml</strong>",
-    "user.none": "No users",
+
+    "users.empty.role": "There are no users with this role",
 
     "error.access.login": "Invalid email or password",
     "error.access.panel": "You are not allowed to access the panel",

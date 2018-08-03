@@ -2,11 +2,13 @@
 
 namespace Kirby\Cms;
 
+use Closure;
 use Kirby\Exception\DuplicateException;
 use Kirby\Exception\InvalidArgumentException;
 use Kirby\Form\Field as FormField;
 use Kirby\Text\KirbyTag;
 use Kirby\Toolkit\Dir;
+use Kirby\Toolkit\F;
 use Kirby\Toolkit\V;
 
 trait AppPlugins
@@ -19,16 +21,20 @@ trait AppPlugins
         'components' => [],
         'controllers' => [],
         'fieldMethods' => [],
+        'fileMethods' => [],
+        'filesMethods' => [],
         'fields' => [],
         'hooks' => [],
         'options' => [],
         'pages' => [],
         'pageMethods' => [],
         'pageModels' => [],
+        'pagesMethods' => [],
         'routes' => [],
         'snippets' => [],
         'tags' => [],
         'templates' => [],
+        'translations' => [],
         'validators' => []
     ];
 
@@ -63,6 +69,16 @@ trait AppPlugins
     protected function extendControllers(array $controllers): array
     {
         return $this->extensions['controllers'] = array_merge($this->extensions['controllers'], $controllers);
+    }
+
+    protected function extendFileMethods(array $methods): array
+    {
+        return $this->extensions['fileMethods'] = File::$methods = array_merge(File::$methods, $methods);
+    }
+
+    protected function extendFilesMethods(array $methods): array
+    {
+        return $this->extensions['filesMethods'] = Files::$methods = array_merge(Files::$methods, $methods);
     }
 
     protected function extendFieldMethods(array $methods): array
@@ -111,12 +127,17 @@ trait AppPlugins
             $options = $prefixed;
         }
 
-        return $this->extensions['options'] = $this->options = array_replace_recursive($this->options, $options);
+        return $this->extensions['options'] = $this->options = array_replace_recursive($options, $this->options);
     }
 
     protected function extendPageMethods(array $methods): array
     {
         return $this->extensions['pageMethods'] = Page::$methods = array_merge(Page::$methods, $methods);
+    }
+
+    protected function extendPagesMethods(array $methods): array
+    {
+        return $this->extensions['pagesMethods'] = Pages::$methods = array_merge(Pages::$methods, $methods);
     }
 
     protected function extendPageModels(array $models): array
@@ -129,8 +150,18 @@ trait AppPlugins
         return $this->extensions['pages'] = array_merge($this->extensions['pages'], $pages);
     }
 
-    protected function extendRoutes(array $routes): array
+    /**
+     * Registers additional routes
+     *
+     * @param array|Closure $routes
+     * @return array
+     */
+    protected function extendRoutes($routes): array
     {
+        if (is_a($routes, Closure::class) === true) {
+            $routes = $routes($this);
+        }
+
         return $this->extensions['routes'] = array_merge($this->extensions['routes'], $routes);
     }
 
@@ -152,6 +183,11 @@ trait AppPlugins
     protected function extendTemplates(array $templates): array
     {
         return $this->extensions['templates'] = array_merge($this->extensions['templates'], $templates);
+    }
+
+    protected function extendTranslations(array $translations): array
+    {
+        return $this->extensions['translations'] = array_replace_recursive($this->extensions['translations'], $translations);
     }
 
     protected function extendValidators(array $validators): array
@@ -176,6 +212,30 @@ trait AppPlugins
         }
 
         return $this->extensions[$type] ?? [];
+    }
+
+    /**
+     * Load extensions from site folders.
+     * This is only used for models for now, but
+     * could be extended later
+     */
+    protected function extensionsFromFolders()
+    {
+        $models = [];
+
+        foreach (glob($this->root('models') . '/*.php') as $model) {
+            $name  = F::name($model);
+            $class = $name . 'Page';
+
+            // load the model class
+            include_once $model;
+
+            if (class_exists($class) === true) {
+                $models[$name] = $name . 'Page';
+            }
+        }
+
+        $this->extendPageModels($models);
     }
 
     /**
@@ -236,6 +296,22 @@ trait AppPlugins
         KirbyTag::$aliases = [
             'youtube' => 'video',
             'vimeo'   => 'video'
+        ];
+
+        // Field method aliases
+        Field::$aliases = [
+            'bool'    => 'toBool',
+            'esc'     => 'escape',
+            'excerpt' => 'toExcerpt',
+            'float'   => 'toFloat',
+            'h'       => 'html',
+            'int'     => 'toInt',
+            'kt'      => 'kirbytext',
+            'link'    => 'toLink',
+            'md'      => 'markdown',
+            'sp'      => 'smartypants',
+            'v'       => 'isValid',
+            'x'       => 'xml'
         ];
 
         $this->extendComponents(include static::$root . '/config/components.php');

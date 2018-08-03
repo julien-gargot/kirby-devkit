@@ -4,6 +4,8 @@ namespace Kirby\Cms;
 
 use Closure;
 use Kirby\Data\Data;
+use Kirby\Exception\Exception;
+use Kirby\Exception\InvalidArgumentException;
 use Kirby\Exception\LogicException;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\F;
@@ -21,7 +23,7 @@ trait PageActions
     protected function changeNum(int $num = null): self
     {
         // always make sure to have the right sorting number
-        $num = $this->createNum($num);
+        $num = $num !== null ? $this->createNum($num) : null;
 
         if ($num === $this->num()) {
             return $this;
@@ -101,7 +103,7 @@ trait PageActions
     protected function changeStatusToDraft(): self
     {
         $page = $this->commit('changeStatus', [$this, 'draft'], function ($page) {
-            $draft = $page->clone(['num' => null], PageDraft::class);
+            $draft = $page->clone(['num' => null], 'Kirby\Cms\PageDraft');
 
             if ($page->exists() === false) {
                 return $draft;
@@ -208,7 +210,12 @@ trait PageActions
         }
 
         return $this->commit('changeTitle', [$this, $title], function ($page, $title) {
-            return $page->clone(['content' => ['title' => $title]])->save();
+            $content = $page
+                ->content()
+                ->update(['title' => $title])
+                ->toArray();
+
+            return $page->clone(['content' => $content])->save();
         });
     }
 
@@ -260,12 +267,6 @@ trait PageActions
         $page = PageDraft::factory($props);
 
         return $page->commit('create', [$page, $props], function ($page, $props) {
-            if ($page->exists() === true) {
-                throw new DuplicateException([
-                    'key'  => 'page.draft.duplicate',
-                    'data' => ['slug' => $page->slug()]
-                ]);
-            }
 
             // create the new page directory
             if (Dir::make($page->root()) !== true) {
@@ -398,7 +399,7 @@ trait PageActions
             return $this;
         }
 
-        $page = $this->clone([], Page::class);
+        $page = $this->clone([], 'Kirby\Cms\Page');
 
         if ($this->exists() === false) {
             return $page;
@@ -426,6 +427,9 @@ trait PageActions
     {
         $this->children  = null;
         $this->blueprint = null;
+        $this->files     = null;
+        $this->content   = null;
+        $this->inventory = null;
 
         return $this;
     }

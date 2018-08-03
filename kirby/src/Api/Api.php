@@ -6,6 +6,7 @@ use Closure;
 use Exception;
 use Throwable;
 
+use Kirby\Exception\NotFoundException;
 use Kirby\Http\Router;
 use Kirby\Http\Response;
 use Kirby\Toolkit\Properties;
@@ -21,11 +22,11 @@ class Api
     use Properties;
 
     protected $authentication;
-    protected $collections;
-    protected $data;
-    protected $models;
-    protected $routes;
-    protected $requestData;
+    protected $collections = [];
+    protected $data = [];
+    protected $models = [];
+    protected $routes = [];
+    protected $requestData = [];
     protected $requestMethod;
 
     public function __call($method, $args)
@@ -79,7 +80,7 @@ class Api
     public function collection(string $name, $collection = null)
     {
         if (isset($this->collections[$name]) === false) {
-            throw new Exception(sprintf('The collection "%s" does not exist', $name));
+            throw new NotFoundException(sprintf('The collection "%s" does not exist', $name));
         }
 
         return new Collection($this, $collection, $this->collections[$name]);
@@ -97,11 +98,11 @@ class Api
         }
 
         if ($this->hasData($key) === false) {
-            throw new Exception(sprintf('Api data for "%s" does not exist', $key));
+            throw new NotFoundException(sprintf('Api data for "%s" does not exist', $key));
         }
 
         // lazy-load data wrapped in Closures
-        if (is_a($this->data[$key], Closure::class) === true) {
+        if (is_a($this->data[$key], 'Closure') === true) {
             return $this->data[$key]->call($this, ...$args);
         }
 
@@ -116,7 +117,7 @@ class Api
     public function model(string $name, $object = null)
     {
         if (isset($this->models[$name]) === false) {
-            throw new Exception(sprintf('The model "%s" does not exist', $name));
+            throw new NotFoundException(sprintf('The model "%s" does not exist', $name));
         }
 
         return new Model($this, $object, $this->models[$name]);
@@ -170,12 +171,16 @@ class Api
 
     public function resolve($object)
     {
-        if (is_a($object, Model::class) === true || is_a($object, Collection::class) === true) {
+        if (is_a($object, 'Kirby\Api\Model') === true || is_a($object, 'Kirby\Api\Collection') === true) {
             return $object;
         }
 
         $className = strtolower(get_class($object));
-        $className = substr($className, strrpos($className, '\\') + 1);
+        $lastDash  = strrpos($className, '\\');
+
+        if ($lastDash !== false) {
+            $className = substr($className, $lastDash + 1);
+        }
 
         if (isset($this->models[$className]) === true) {
             return $this->model($className, $object);
@@ -185,7 +190,14 @@ class Api
             return $this->collection($className, $object);
         }
 
-        throw new Exception(sprintf('The object "%s" cannot be resolved', $className));
+        // now models deeply by checking for the actual type
+        foreach ($this->models as $className => $model) {
+            if (is_a($object, $model['type']) === true) {
+                return $this->model($className, $object);
+            }
+        }
+
+        throw new NotFoundException(sprintf('The object "%s" cannot be resolved', $className));
     }
 
     public function routes(): array
@@ -199,21 +211,26 @@ class Api
         return $this;
     }
 
-    protected function setCollections(array $collections = [])
+    protected function setCollections(array $collections = null)
     {
-        $this->collections = array_change_key_case($collections);
+        if ($collections !== null) {
+            $this->collections = array_change_key_case($collections);
+        }
         return $this;
     }
 
-    protected function setData(array $data = [])
+    protected function setData(array $data = null)
     {
-        $this->data = $data;
+        $this->data = $data ?? [];
         return $this;
     }
 
-    protected function setModels(array $models = [])
+    protected function setModels(array $models = null)
     {
-        $this->models = array_change_key_case($models);
+        if ($models !== null) {
+            $this->models = array_change_key_case($models);
+        }
+
         return $this;
     }
 
@@ -235,13 +252,9 @@ class Api
         return $this;
     }
 
-    protected function setRoutes(array $routes)
+    protected function setRoutes(array $routes = null)
     {
-        if (empty($routes) === true) {
-            throw new Exception('You must define at least one API route');
-        }
-
-        $this->routes = $routes;
+        $this->routes = $routes ?? [];
         return $this;
     }
 
@@ -252,7 +265,7 @@ class Api
         } catch (Throwable $e) {
             error_log($e);
 
-            if (is_a($e, \Kirby\Exception\Exception::class) === true) {
+            if (is_a($e, 'Kirby\Exception\Exception') === true) {
                 $result = ['status' => 'error'] + $e->toArray();
             } else {
                 $result = [

@@ -198,7 +198,7 @@ class Field
         $result = [];
 
         foreach ($props as $name => $callback) {
-            if (is_a($callback, Closure::class) === false) {
+            if (is_a($callback, 'Closure') === false) {
                 $result[$name] = $callback;
                 continue;
             }
@@ -230,8 +230,9 @@ class Field
         $array = array_merge($this->props, $this->computed);
         ksort($array);
 
-        $array['invalid'] = $this->isInvalid();
-        $array['errors']  = $this->errors();
+        $array['invalid']   = $this->isInvalid();
+        $array['errors']    = $this->errors();
+        $array['signature'] = md5(json_encode($array));
 
         return array_filter($array, function ($item) {
             return $item !== null;
@@ -292,7 +293,7 @@ class Field
                 continue;
             }
 
-            if (is_a($validation, Closure::class) === true) {
+            if (is_a($validation, 'Closure') === true) {
                 try {
                     $validation->call($this, $this->value());
                 } catch (Exception $e) {
