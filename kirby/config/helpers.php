@@ -4,6 +4,7 @@ use Kirby\Cms\App;
 use Kirby\Cms\Html;
 use Kirby\Cms\Response;
 use Kirby\Cms\Url;
+use Kirby\Exception\Exception;
 use Kirby\Http\Server;
 use Kirby\Toolkit\F;
 use Kirby\Toolkit\I18n;
@@ -35,6 +36,35 @@ function attr(array $attr = null, $before = null, $after = null)
 function collection(string $name)
 {
     return App::instance()->collection($name);
+}
+
+/**
+ * Checks / returns a CSRF token
+ *
+ * @param string $check Pass a token here to compare it to the one in the session
+ * @return string|boolean Either the token or a boolean check result
+ */
+function csrf(string $check = null)
+{
+    $session = App::instance()->session();
+
+    // check explicitly if there have been no arguments at all;
+    // checking for null introduces a security issue because null could come
+    // from user input or bugs in the calling code!
+    if (func_num_args() === 0) {
+        // no arguments, generate/return a token
+
+        $token = $session->get('csrf');
+        if (is_string($token) !== true) {
+            $token = bin2hex(random_bytes(32));
+            $session->set('csrf', $token);
+        }
+
+        return $token;
+    } else {
+        // argument has been passed, check the token
+        return $check === $session->get('csrf');
+    }
 }
 
 /**
@@ -142,7 +172,7 @@ function gist(string $url, string $file = null): string
  * @param integer $code
  * @return void
  */
-function go(string $url = null, int $code = 301)
+function go(string $url = null, int $code = 302)
 {
     die(Response::redirect($url, $code));
 }
@@ -199,6 +229,77 @@ function image(string $path = null)
     } else {
         return null;
     }
+}
+
+/**
+ * Runs a number of validators on a set of data and checks if the data is invalid
+ *
+ * @param array $data
+ * @param array $rules
+ * @param array $messages
+ * @return false|array
+ */
+function invalid(array $data = [], array $rules = [], array $messages = [])
+{
+  $errors = [];
+
+  foreach ($rules as $field => $validations) {
+
+    $validationIndex = -1;
+
+    // See: http://php.net/manual/en/types.comparisons.php
+    // only false for: null, undefined variable, '', []
+    $filled  = isset($data[$field]) && $data[$field] !== '' && $data[$field] !== [];
+    $message = $messages[$field] ?? $field;
+
+    // True if there is an error message for each validation method.
+    $messageArray = is_array($message);
+
+    foreach ($validations as $method => $options) {
+
+            if (is_numeric($method) === true) {
+                $method = $options;
+            }
+
+            $validationIndex++;
+
+            if ($method === 'required') {
+
+                if ($filled) {
+                    // Field is required and filled.
+                    continue;
+                }
+
+            } elseif ($filled) {
+
+                if (is_array($options) === false) {
+                    $options = [$options];
+                }
+
+                array_unshift($options, $data[$field] ?? null);
+
+                if (V::$method(...$options) === true) {
+                    // Field is filled and passes validation method.
+                    continue;
+                }
+
+            } else {
+                // If a field is not required and not filled, no validation should be done.
+                continue;
+            }
+
+            // If no continue was called we have a failed validation.
+            if ($messageArray) {
+                $errors[$field][] = $message[$validationIndex] ?? $field;
+            } else {
+                $errors[$field] = $message;
+            }
+
+        }
+
+    }
+
+    return $errors;
 }
 
 /**

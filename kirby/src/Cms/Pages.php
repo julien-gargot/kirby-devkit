@@ -114,10 +114,10 @@ class Pages extends Collection
      * @param array $pages
      * @param Model $parent
      * @param array $inject
-     * @param string $class
+     * @param bool $draft
      * @return Pages
      */
-    public static function factory(array $pages, Model $model = null, string $class = 'Kirby\Cms\Page')
+    public static function factory(array $pages, Model $model = null, bool $draft = false)
     {
         $model    = $model ?? App::instance()->site();
         $children = new static([], $model);
@@ -136,8 +136,9 @@ class Pages extends Collection
             $props['kirby']      = $kirby;
             $props['parent']     = $parent;
             $props['site']       = $site;
+            $props['isDraft']    = $draft;
 
-            $page = $class::factory($props);
+            $page = Page::factory($props);
 
             $children->data[$page->id()] = $page;
         }
@@ -173,11 +174,16 @@ class Pages extends Collection
      */
     public function findById($id)
     {
-        $page = $this->get($id);
+        $page      = $this->get($id);
+        $multiLang = App::instance()->multilang();
+
+        if ($multiLang === true) {
+            $page = $this->findBy('slug', $id);
+        }
 
         if (!$page) {
             $start = is_a($this->parent, 'Kirby\Cms\Page') === true ? $this->parent->id() : '';
-            $page  = $this->findByIdRecursive($id, $start);
+            $page  = $this->findByIdRecursive($id, $start, $multiLang);
         }
 
         return $page;
@@ -190,7 +196,7 @@ class Pages extends Collection
      * @param string $startAt
      * @return mixed
      */
-    public function findByIdRecursive($id, $startAt = null)
+    public function findByIdRecursive($id, $startAt = null, bool $multiLang = false)
     {
         $path       = explode('/', $id);
         $collection = $this;
@@ -200,6 +206,10 @@ class Pages extends Collection
         foreach ($path as $key) {
             $query = ltrim($query . '/' . $key, '/');
             $item  = $collection->get($query) ?? null;
+
+            if ($item === null && $multiLang === true) {
+                $item = $collection->findBy('slug', $key);
+            }
 
             if ($item === null) {
                 return null;
@@ -370,6 +380,16 @@ class Pages extends Collection
         }
 
         return $this;
+    }
+
+    /*
+     * Returns all listed and unlisted pages in the collection
+     *
+     * @return self
+     */
+    public function published(): self
+    {
+        return $this->filterBy('isDraft', '==', false);
     }
 
     /**

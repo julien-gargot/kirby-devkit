@@ -23,7 +23,16 @@ return [
 
     },
     'kirby' => function () {
-        return kirby();
+        $kirby = kirby();
+
+        if ($language = $this->language()) {
+            $kirby->language = $kirby->languages()->find($language);
+        }
+
+        return $kirby;
+    },
+    'language' => function () {
+        return $this->requestHeaders('x-language');
     },
     'page' => function (string $id) {
 

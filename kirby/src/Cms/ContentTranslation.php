@@ -52,6 +52,16 @@ class ContentTranslation
     }
 
     /**
+     * Improve var_dump() output
+     *
+     * @return array
+     */
+    public function __debuginfo(): array
+    {
+        return $this->toArray();
+    }
+
+    /**
      * Returns the language code of the
      * translation
      *
@@ -74,8 +84,15 @@ class ContentTranslation
             return $this->content;
         }
 
+        // try to fallback to the content file without language code
+        if ($this->exists() === false && $this->isDefault() === true) {
+            $file = $this->parent()->contentFile();
+        } else {
+            $file = $this->contentFile();
+        }
+
         try {
-            return $this->content = Data::read($this->contentFile());
+            return $this->content = Data::read($file);
         } catch (Exception $e) {
             return $this->content = [];
         }
@@ -88,7 +105,7 @@ class ContentTranslation
      */
     public function contentFile(): string
     {
-        return $this->contentFile = $this->contentFile ?? preg_replace('!.txt$!', '.' . $this->code . '.txt', $this->parent->contentFile());
+        return $this->contentFile = $this->parent->contentFile($this->code);
     }
 
     /**
@@ -99,6 +116,17 @@ class ContentTranslation
     public function exists(): bool
     {
         return file_exists($this->contentFile()) === true;
+    }
+
+    /**
+     * Checks if the this is the default translation
+     * of the model
+     *
+     * @return boolean
+     */
+    public function isDefault(): bool
+    {
+        return $this->code() === $this->parent->kirby()->languages()->default()->code();
     }
 
     /**
@@ -159,5 +187,21 @@ class ContentTranslation
     public function slug(): ?string
     {
         return $this->slug = $this->slug ?? ($this->content()['slug'] ?? null);
+    }
+
+    /**
+     * Converts the most imporant translation
+     * props to an array
+     *
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'code'    => $this->code(),
+            'content' => $this->content(),
+            'exists'  => $this->exists(),
+            'slug'    => $this->slug(),
+        ];
     }
 }

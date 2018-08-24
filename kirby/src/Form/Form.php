@@ -29,6 +29,7 @@ class Form
         unset($inject['fields'], $inject['values']);
 
         $this->fields = new Fields;
+        $this->values = $values;
 
         foreach ($fields as $name => $props) {
 
@@ -116,7 +117,7 @@ class Form
             }
         }
 
-        return $array;
+        return array_merge($this->values, $array);
     }
 
     public function values(): array

@@ -31,6 +31,8 @@ trait AppPlugins
         'pageModels' => [],
         'pagesMethods' => [],
         'routes' => [],
+        'sections' => [],
+        'siteMethods' => [],
         'snippets' => [],
         'tags' => [],
         'templates' => [],
@@ -165,6 +167,16 @@ trait AppPlugins
         return $this->extensions['routes'] = array_merge($this->extensions['routes'], $routes);
     }
 
+    protected function extendSections(array $sections): array
+    {
+        return $this->extensions['sections'] = Section::$types = array_merge(Section::$types, $sections);
+    }
+
+    protected function extendSiteMethods(array $methods): array
+    {
+        return $this->extensions['siteMethods'] = Site::$methods = array_merge(Site::$methods, $methods);
+    }
+
     protected function extendSmartypants(Closure $smartypants): array
     {
         return $this->extensions['smartypants'] = $smartypants;
@@ -291,6 +303,7 @@ trait AppPlugins
     {
         // Form Field Mixins
         FormField::$mixins['options'] = include static::$root . '/config/field-mixins/options.php';
+        FormField::$mixins['tags'] = include static::$root . '/config/field-mixins/tags.php';
 
         // Tag Aliases
         KirbyTag::$aliases = [
@@ -319,6 +332,25 @@ trait AppPlugins
         $this->extendFields(include static::$root . '/config/fields.php');
         $this->extendFieldMethods((include static::$root . '/config/methods.php')($this));
         $this->extendTags(include static::$root . '/config/tags.php');
+
+        // blueprint presets
+        PageBlueprint::$presets['pages']   = include static::$root . '/config/presets/pages.php';
+        PageBlueprint::$presets['page']    = include static::$root . '/config/presets/page.php';
+        PageBlueprint::$presets['files']   = include static::$root . '/config/presets/files.php';
+
+        // section mixins
+        Section::$mixins['headline']       = include static::$root . '/config/sections/mixins/headline.php';
+        Section::$mixins['layout']         = include static::$root . '/config/sections/mixins/layout.php';
+        Section::$mixins['max']            = include static::$root . '/config/sections/mixins/max.php';
+        Section::$mixins['min']            = include static::$root . '/config/sections/mixins/min.php';
+        Section::$mixins['pagination']     = include static::$root . '/config/sections/mixins/pagination.php';
+        Section::$mixins['parent']         = include static::$root . '/config/sections/mixins/parent.php';
+
+        // section types
+        Section::$types['info']            = include static::$root . '/config/sections/info.php';
+        Section::$types['pages']           = include static::$root . '/config/sections/pages.php';
+        Section::$types['files']           = include static::$root . '/config/sections/files.php';
+        Section::$types['fields']          = include static::$root . '/config/sections/fields.php';
     }
 
     /**

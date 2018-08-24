@@ -2,7 +2,13 @@
 
 namespace Kirby\Cms;
 
+use Kirby\Exception\DuplicateException;
+use Kirby\Exception\Exception;
 use Kirby\Exception\InvalidArgumentException;
+use Kirby\Exception\LogicException;
+use Kirby\Exception\PermissionException;
+use Kirby\Toolkit\F;
+use Kirby\Toolkit\Str;
 
 /**
  * Represents a content language
@@ -37,6 +43,11 @@ class Language extends Model
     protected $name;
 
     /**
+     * @var array|null
+     */
+    protected $translations;
+
+    /**
      * @var string
      */
     protected $url;
@@ -57,7 +68,8 @@ class Language extends Model
             'direction',
             'locale',
             'name',
-            'url'
+            'translations',
+            'url',
         ]);
     }
 
@@ -95,6 +107,128 @@ class Language extends Model
     }
 
     /**
+     * When the last language is being deleted, the installation
+     * changes from multi-language to single language. In this case
+     * all language codes must be removed from the text files.
+     *
+     * @return bool
+     */
+    protected function convertToSingleLanguage($code): bool
+    {
+        $kirby = App::instance();
+        $site  = $kirby->site();
+
+        F::move($site->contentFile($code), $site->contentFile());
+
+        foreach ($kirby->site()->index() as $page) {
+            $files = $page->files();
+
+            foreach ($files as $file) {
+                F::move($file->contentFile($code), $file->contentFile());
+            }
+
+            F::move($page->contentFile($code), $page->contentFile());
+        }
+
+        return true;
+    }
+
+    /**
+     * Creates a new language object
+     *
+     * @param array $props
+     * @return self
+     */
+    public static function create(array $props): self
+    {
+        $props['slug'] = Str::slug($props['slug'] ?? null);
+        $kirby         = App::instance();
+        $languages     = $kirby->languages();
+        $site          = $kirby->site();
+
+        // make the first language the default language
+        if ($languages->count() === 0) {
+            $props['default'] = true;
+        }
+
+        $language = new static($props);
+
+        if ($language->exists() === true) {
+            throw new DuplicateException('The language already exists');
+        }
+
+        $language->save();
+
+        if ($languages->count() === 0) {
+            $code = $language->code();
+
+            F::move($site->contentFile(), $site->contentFile($code));
+
+            foreach ($kirby->site()->index() as $page) {
+                $files = $page->files();
+
+                foreach ($files as $file) {
+                    F::move($file->contentFile(), $file->contentFile($code));
+                }
+
+                F::move($page->contentFile(), $page->contentFile($code));
+            }
+        }
+
+        return $language;
+    }
+
+    public function delete(): bool
+    {
+        if ($this->exists() === false) {
+            return true;
+        }
+
+        $kirby     = App::instance();
+        $languages = $kirby->languages();
+        $site      = $kirby->site();
+        $code      = $this->code();
+
+        if (F::remove($this->root()) !== true) {
+            throw new Exception('The language could not be deleted');
+        }
+
+        if ($languages->count() === 1) {
+            $this->convertToSingleLanguage($code);
+        } else {
+            $this->deleteContentFiles($code);
+        }
+
+        return true;
+    }
+
+    /**
+     * When the language is deleted, all content files with
+     * the language code must be removed as well.
+     *
+     * @return bool
+     */
+    protected function deleteContentFiles($code): bool
+    {
+        $kirby = App::instance();
+        $site  = $kirby->site();
+
+        F::remove($site->contentFile($code));
+
+        foreach ($kirby->site()->index() as $page) {
+            $files = $page->files();
+
+            foreach ($files as $file) {
+                F::remove($file->contentFile($code));
+            }
+
+            F::remove($page->contentFile($code));
+        }
+
+        return true;
+    }
+
+    /**
      * Reading direction of this language
      *
      * @return string
@@ -102,6 +236,16 @@ class Language extends Model
     public function direction(): string
     {
         return $this->direction;
+    }
+
+    /**
+     * Check if the language file exists
+     *
+     * @return boolean
+     */
+    public function exists(): bool
+    {
+        return file_exists($this->root());
     }
 
     /**
@@ -113,6 +257,17 @@ class Language extends Model
     public function isDefault(): bool
     {
         return $this->default;
+    }
+
+    /**
+     * The id is required for collections
+     * to work properly. The code is used as id
+     *
+     * @return string
+     */
+    public function id(): string
+    {
+        return $this->code;
     }
 
     /**
@@ -144,6 +299,34 @@ class Language extends Model
     public function pattern(): string
     {
         return $this->url;
+    }
+
+    /**
+     * Returns the absolute path to the language file
+     *
+     * @return string
+     */
+    public function root(): string
+    {
+        return App::instance()->root('languages') . '/' . $this->code() . '.php';
+    }
+
+    /**
+     * Saves the language settings in the languages folder
+     *
+     * @return self
+     */
+    public function save(): self
+    {
+        $data = $this->toArray();
+
+        unset($data['url']);
+
+        $export = '<?php' . PHP_EOL . PHP_EOL . 'return ' . var_export($data, true) . ';';
+
+        F::write($this->root(), $export);
+
+        return $this;
     }
 
     /**
@@ -197,6 +380,16 @@ class Language extends Model
     }
 
     /**
+     * @param array $translations
+     * @return self
+     */
+    protected function setTranslations(array $translations = null): self
+    {
+        $this->translations = $translations ?? [];
+        return $this;
+    }
+
+    /**
      * @param string $url
      * @return self
      */
@@ -225,6 +418,16 @@ class Language extends Model
     }
 
     /**
+     * Returns the translation strings for this language
+     *
+     * @return array
+     */
+    public function translations(): array
+    {
+        return $this->translations;
+    }
+
+    /**
      * Returns the absolute Url for the language
      *
      * @return string
@@ -232,5 +435,44 @@ class Language extends Model
     public function url(): string
     {
         return Url::to($this->url);
+    }
+
+    /**
+     * Update language properties and save them
+     *
+     * @param array $props
+     * @return self
+     */
+    public function update(array $props = null): self
+    {
+        $props['slug'] = Str::slug($props['slug'] ?? null);
+        $kirby         = App::instance();
+        $updated       = $this->clone($props);
+
+        // convert the current default to a non-default language
+        if ($updated->isDefault() === true) {
+            if ($oldDefault = $kirby->languages()->default()) {
+                $oldDefault->clone(['default' => false])->save();
+            }
+
+            $code = $this->code();
+            $site = $kirby->site();
+
+            touch($site->contentFile($code));
+
+            foreach ($kirby->site()->index() as $page) {
+                $files = $page->files();
+
+                foreach ($files as $file) {
+                    touch($file->contentFile($code));
+                }
+
+                touch($page->contentFile($code));
+            }
+        } elseif ($this->isDefault() === true) {
+            throw new PermissionException('Please select another language to be the primary language');
+        }
+
+        return $updated->save();
     }
 }

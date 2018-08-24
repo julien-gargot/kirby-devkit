@@ -6,9 +6,7 @@ use Kirby\Cms\Blueprint;
 return [
     'props' => [
         'fields' => function (array $fields) {
-            return array_map(function ($field) {
-                return Blueprint::extend($field);
-            }, $fields);
+            return $fields;
         },
         'min' => function (int $min = null) {
             return $min;
@@ -43,6 +41,15 @@ return [
                 'values' => $values,
                 'model'  => $this->data['model'] ?? null
             ], $this->data));
+        },
+        'toString' => function () {
+            $strings = [];
+
+            foreach ($this->value() as $row) {
+                $strings[] = $this->form($row)->strings();
+            }
+
+            return Yaml::encode($strings);
         }
     ],
     'validations' => [

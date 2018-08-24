@@ -1,21 +1,8 @@
 title: Default Page
-
-columns:
-  - 1/3: pages, files
-  - 2/3: content
-
-sections:
-  pages:
-    headline: Pages
-    type: pages
-  files:
-    headline: Files
-    type: files
-  content:
-    type: fields
-    fields:
-      text:
-        label: Text
-        type: textarea
-        size: large
+preset: page
+fields:
+  text:
+    label: Text
+    type: textarea
+    size: large
 

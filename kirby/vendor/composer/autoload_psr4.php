@@ -12,6 +12,5 @@ return array(
     'Psr\\Log\\' => array($vendorDir . '/psr/log/Psr/Log'),
     'PHPMailer\\PHPMailer\\' => array($vendorDir . '/phpmailer/phpmailer/src'),
     'Kirby\\' => array($baseDir . '/src', $baseDir . '/tests'),
-    'Defuse\\Crypto\\' => array($vendorDir . '/defuse/php-encryption/src'),
     '' => array($vendorDir . '/league/color-extractor/src'),
 );

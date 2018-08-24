@@ -59,18 +59,30 @@ class Route
      */
     protected $wildcards = [
         'required' => [
-            '(:num)'     => '([0-9]+)',
+            '(:num)'     => '(-?[0-9]+)',
             '(:alpha)'   => '([a-zA-Z]+)',
             '(:any)'     => '([a-zA-Z0-9\.\-_%= \+\@]+)',
             '(:all)'     => '(.*)',
         ],
         'optional' => [
-            '/(:num?)'   => '(?:/([0-9]+)',
+            '/(:num?)'   => '(?:/(-?[0-9]+)',
             '/(:alpha?)' => '(?:/([a-zA-Z]+)',
             '/(:any?)'   => '(?:/([a-zA-Z0-9\.\-_%= \+\@]+)',
             '/(:all?)'   => '(?:/(.*)',
         ],
     ];
+
+    /**
+     * Magic getter for route attributes
+     *
+     * @param string $key
+     * @param array $arguments
+     * @return mixed
+     */
+    public function __call(string $key, array $arguments = null)
+    {
+        return $this->attributes[$key] ?? null;
+    }
 
     /**
      * Creates a new Route object for the given
@@ -126,6 +138,16 @@ class Route
     public function method(): string
     {
         return $this->method;
+    }
+
+    /**
+     * Returns the route name if set
+     *
+     * @return string|null
+     */
+    public function name(): ?string
+    {
+        return $this->attributes['name'] ?? null;
     }
 
     /**

@@ -8,6 +8,7 @@ use Kirby\Exception\DuplicateException;
 use Kirby\Exception\Exception;
 use Kirby\Exception\InvalidArgumentLogicException;
 use Kirby\Exception\LogicException;
+use Kirby\Exception\PermissionException;
 use Kirby\Toolkit\Dir;
 use Kirby\Toolkit\V;
 
@@ -119,6 +120,10 @@ trait UserActions
      */
     protected function commit(string $action, $arguments = [], Closure $callback)
     {
+        if ($this->isKirby() === true) {
+            throw new PermissionException('The Kirby user cannot be changed');
+        }
+
         $old = $this->hardcopy();
 
         $this->rules()->$action(...$arguments);
@@ -178,60 +183,6 @@ trait UserActions
             }
 
             return true;
-        });
-    }
-
-    /**
-     * Stores the user object on disk
-     *
-     * @return self
-     */
-    public function save(): self
-    {
-        $content = $this->content()->toArray();
-
-        // store main information in the content file
-        $content['language'] = $this->language();
-        $content['name']     = $this->name();
-        $content['password'] = $this->hashPassword($this->password());
-        $content['role']     = $this->role()->id();
-
-        // remove the email. It's already stored in the directory
-        unset($content['email']);
-
-        Data::write($this->root() . '/user.txt', $content);
-
-        return $this;
-    }
-
-    /**
-     * Updates the user content
-     *
-     * @param array $input
-     * @param boolean $validate
-     * @return self
-     */
-    public function update(array $input = null, bool $validate = true): self
-    {
-        $form = Form::for($this, [
-            'values' => $input
-        ]);
-
-        // validate the input
-        if ($validate === true && $form->isInvalid() === true) {
-            throw new InvalidArgumentException([
-                'fallback' => 'Invalid form with errors',
-                'details'  => $form->errors()
-            ]);
-        }
-
-        return $this->commit('update', [$this, $form->values(), $form->strings()], function ($user, $values, $strings) {
-            $content = $user
-                ->content()
-                ->update($strings)
-                ->toArray();
-
-            return $user->clone(['content' => $content])->save();
         });
     }
 }

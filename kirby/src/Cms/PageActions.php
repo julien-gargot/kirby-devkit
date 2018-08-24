@@ -7,6 +7,7 @@ use Kirby\Data\Data;
 use Kirby\Exception\Exception;
 use Kirby\Exception\InvalidArgumentException;
 use Kirby\Exception\LogicException;
+use Kirby\Exception\NotFoundException;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\F;
 use Kirby\Toolkit\Str;
@@ -48,20 +49,30 @@ trait PageActions
      * Changes the slug/uid of the page
      *
      * @param string $slug
+     * @param string $language
      * @return self
      */
-    public function changeSlug(string $slug): self
+    public function changeSlug(string $slug, string $languageCode = null): self
     {
+        // always sanitize the slug
+        $slug = Str::slug($slug);
+
+        // in multi-language installations the slug for the non-default
+        // languages is stored in the text file. The changeSlugForLanguage
+        // method takse care of that.
+        if ($language = $this->kirby()->language($languageCode)) {
+            if ($language->isDefault() === false) {
+                return $this->changeSlugForLanguage($slug, $languageCode);
+            }
+        }
+
         // if the slug stays exactly the same,
         // nothing needs to be done.
         if ($slug === $this->slug()) {
             return $this;
         }
 
-        // always sanitize the slug
-        $slug = Str::slug($slug);
-
-        return $this->commit('changeSlug', [$this, $slug], function ($oldPage, $slug) {
+        return $this->commit('changeSlug', [$this, $slug, $languageCode = null], function ($oldPage, $slug) {
             $newPage = $oldPage->clone(['slug' => $slug]);
 
             if ($oldPage->exists() === false) {
@@ -75,6 +86,33 @@ trait PageActions
             Dir::remove($oldPage->mediaRoot());
 
             return $newPage;
+        });
+    }
+
+    /**
+     * Change the slug for a specific language
+     *
+     * @param string $slug
+     * @param string $language
+     * @return self
+     */
+    protected function changeSlugForLanguage(string $slug, string $languageCode = null): self
+    {
+        $language = $this->kirby()->language($languageCode);
+
+        if (!$language) {
+            throw new NotFoundException('The language: "' . $languageCode . '" does not exist');
+        }
+
+        if ($language->isDefault() === true) {
+            throw new InvalidArgumentException('Use the changeSlug method to change the slug for the default language');
+        }
+
+        return $this->commit('changeSlug', [$this, $slug, $languageCode], function ($oldPage, $slug, $languageCode) {
+            $content = $oldPage->content($languageCode)->toArray();
+            $content['slug'] = $slug;
+
+            return $oldPage->clone(['content' => $content])->save($languageCode);
         });
     }
 
@@ -103,7 +141,7 @@ trait PageActions
     protected function changeStatusToDraft(): self
     {
         $page = $this->commit('changeStatus', [$this, 'draft'], function ($page) {
-            $draft = $page->clone(['num' => null], 'Kirby\Cms\PageDraft');
+            $draft = $page->clone(['num' => null, 'isDraft' => true]);
 
             if ($page->exists() === false) {
                 return $draft;
@@ -262,9 +300,10 @@ trait PageActions
         // clean up the slug
         $props['slug']     = Str::slug($props['slug'] ?? $props['content']['title'] ?? null);
         $props['template'] = strtolower($props['template'] ?? 'default');
+        $props['isDraft']  = true;
 
         // create a temporary page object
-        $page = PageDraft::factory($props);
+        $page = Page::factory($props);
 
         return $page->commit('create', [$page, $props], function ($page, $props) {
 
@@ -273,8 +312,15 @@ trait PageActions
                 throw new LogicException('The page directory for "' . $page->slug() . '" cannot be created');
             }
 
+            // always create pages in the default language
+            if ($page->kirby()->multilang() === true) {
+                $languageCode = $page->kirby()->languages()->default()->code();
+            } else {
+                $languageCode = null;
+            }
+
             // write the content file
-            return $page->clone()->save();
+            return $page->clone()->save($languageCode);
         });
     }
 
@@ -399,7 +445,7 @@ trait PageActions
             return $this;
         }
 
-        $page = $this->clone([], 'Kirby\Cms\Page');
+        $page = $this->clone(['isDraft' => false]);
 
         if ($this->exists() === false) {
             return $page;
@@ -482,14 +528,19 @@ trait PageActions
     }
 
     /**
-     * Stores the file meta content on disk
+     * Delete the text file without language code
+     * before storing the actual file
      *
+     * @param string|null $languageCode
      * @return self
      */
-    public function save(): self
+    public function save(string $languageCode = null)
     {
-        Data::write($this->contentFile(), $this->content()->toArray());
-        return $this;
+        if ($this->kirby()->multilang() === true) {
+            F::remove($this->contentFile());
+        }
+
+        return parent::save($languageCode);
     }
 
     /**
@@ -567,39 +618,19 @@ trait PageActions
      * Updates the page data
      *
      * @param array $input
+     * @param string $language
      * @param boolean $validate
      * @return self
      */
-    public function update(array $input = null, bool $validate = true): self
+    public function update(array $input = null, string $language = null, bool $validate = false)
     {
-        $form = Form::for($this, [
-            'values' => $input
-        ]);
-
-        // validate the input
-        if ($validate === true) {
-            if ($form->isInvalid() === true) {
-                throw new InvalidArgumentException([
-                    'fallback' => 'Invalid form with errors',
-                    'details'  => $form->errors()
-                ]);
-            }
-        }
-
-        $result = $this->commit('update', [$this, $form->values(), $form->strings()], function ($page, $values, $strings) {
-            $content = $page
-                ->content()
-                ->update($strings)
-                ->toArray();
-
-            return $page->clone(['content' => $content])->save();
-        });
+        $page = parent::update($input, $language, $validate);
 
         // if num is created from page content, update num on content update
-        if ($this->isListed() === true && in_array($this->blueprint()->num(), ['zero', 'default']) === false) {
-            $this->changeNum();
+        if ($page->isListed() === true && in_array($page->blueprint()->num(), ['zero', 'default']) === false) {
+            $page = $page->changeNum();
         }
 
-        return $result;
+        return $page;
     }
 }

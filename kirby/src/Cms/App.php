@@ -48,6 +48,7 @@ class App
 
     protected $collections;
     protected $languages;
+    protected $multilang;
     protected $options;
     protected $path;
     protected $roles;
@@ -86,6 +87,7 @@ class App
 
         // configurable properties
         $this->setOptionalProperties($props, [
+            'languages',
             'path',
             'roles',
             'site',
@@ -107,7 +109,7 @@ class App
         $this->handleErrors();
 
         // set the singleton
-        static::$instance = $this;
+        Model::$kirby = static::$instance = $this;
     }
 
     /**
@@ -224,6 +226,26 @@ class App
     public function component($name)
     {
         return $this->extensions['components'][$name] ?? null;
+    }
+
+    /**
+     * Returns the content extension
+     *
+     * @return string
+     */
+    public function contentExtension(): string
+    {
+        return $this->options['content']['extension'] ?? 'txt';
+    }
+
+    /**
+     * Returns files that should be ignored when scanning folders
+     *
+     * @return array
+     */
+    public function contentIgnore(): array
+    {
+        return $this->options['content']['ignore'] ?? Dir::$ignore;
     }
 
     /**
@@ -403,7 +425,7 @@ class App
             return $this->languages()->find($code);
         }
 
-        return $this->language = $this->language ?? $this->languages()->findDefault();
+        return $this->language = $this->language ?? $this->languages()->default();
     }
 
     /**
@@ -425,6 +447,20 @@ class App
     public function markdown(string $text = null): string
     {
         return $this->extensions['components']['markdown']($this, $text, $this->options['markdown'] ?? []);
+    }
+
+    /**
+     * Check for a multilang setup
+     *
+     * @return boolean
+     */
+    public function multilang(): bool
+    {
+        if ($this->multilang !== null) {
+            return $this->multilang;
+        }
+
+        return $this->multilang = $this->languages()->count() !== 0;
     }
 
     /**
@@ -498,7 +534,7 @@ class App
 
         $options['limit']    = $options['limit']    ?? $config['limit'] ?? 20;
         $options['variable'] = $options['variable'] ?? $config['variable'] ?? 'page';
-        $options['page']     = $options['page']     ?? $request->query()->get($options['variable'], 1);
+        $options['page']     = $options['page']     ?? $request->url()->params()->get($options['variable'], 1);
         $options['url']      = $options['url']      ?? $request->url();
 
         return new Pagination($options);
@@ -553,13 +589,17 @@ class App
      * @param Language $language
      * @return mixed
      */
-    public function resolve(string $path, Language $language = null)
+    public function resolve(string $path = null, Language $language = null)
     {
         // set the current language
         $this->language = $language;
 
         // the site is needed a couple times here
         $site = $this->site();
+
+        if ($path === null) {
+            return $site->homePage();
+        }
 
         if ($page = $site->find($path)) {
             return $page;
@@ -683,6 +723,26 @@ class App
     {
         $this->session = $this->session ?? new Session($this->root('sessions'), $this->options['session'] ?? []);
         return $this->session->get($options);
+    }
+
+    /**
+     * Create your own set of languages
+     *
+     * @param array $languages
+     * @return self
+     */
+    protected function setLanguages(array $languages = null): self
+    {
+        if ($languages !== null) {
+            $this->languages = new Languages();
+
+            foreach ($languages as $props) {
+                $language = new Language($props);
+                $this->languages->data[$language->code()] = $language;
+            }
+        }
+
+        return $this;
     }
 
     /**

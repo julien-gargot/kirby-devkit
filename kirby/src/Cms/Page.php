@@ -4,6 +4,7 @@ namespace Kirby\Cms;
 
 use Closure;
 use Kirby\Data\Data;
+use Kirby\Exception\Exception;
 use Kirby\Exception\NotFoundException;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
@@ -20,16 +21,14 @@ use Throwable;
  * @link      http://getkirby.com
  * @copyright Bastian Allgeier
  */
-class Page extends Model
+class Page extends ModelWithContent
 {
     use PageActions;
     use PageSiblings;
     use HasChildren;
-    use HasContent;
     use HasFiles;
     use HasMethods;
     use HasSiblings;
-    use HasTranslations;
 
     /**
      * All registered page methods
@@ -70,6 +69,13 @@ class Page extends Model
      * @var string
      */
     protected $diruri;
+
+    /**
+     * Draft status flag
+     *
+     * @var bool
+     */
+    protected $isDraft;
 
     /**
      * The Page id
@@ -181,11 +187,23 @@ class Page extends Model
     public function __debuginfo(): array
     {
         return array_merge($this->toArray(), [
-            'content'    => $this->content(),
-            'children'   => $this->children(),
-            'siblings'   => $this->siblings(),
-            'files'      => $this->files(),
+            'content'      => $this->content(),
+            'children'     => $this->children(),
+            'siblings'     => $this->siblings(),
+            'translations' => $this->translations(),
+            'files'        => $this->files(),
         ]);
+    }
+
+    /**
+     * Returns the url to the api endpoint
+     *
+     * @param bool $relative
+     * @return string
+     */
+    public function apiUrl(bool $relative = false): string
+    {
+        return $this->site()->apiUrl($relative) . '/' . $this->panelId();
     }
 
     /**
@@ -205,25 +223,26 @@ class Page extends Model
     /**
      * Returns an array with all blueprints that are available for the page
      *
+     * @params string $inSection
      * @return array
      */
-    public function blueprints(): array
+    public function blueprints(string $inSection = null): array
     {
-        if ($parent = $this->parentModel()) {
-            $blueprints = [];
+        $blueprints = [];
+        $blueprint  = $this->blueprint();
+        $sections   = $inSection !== null ? [$blueprint->section($inSection)] : $blueprint->sections();
 
-            foreach ($parent->blueprint()->sections() as $section) {
-                if (is_a($section, 'Kirby\Cms\BlueprintPagesSection') === false) {
-                    continue;
-                }
-
-                $blueprints = array_map("unserialize", array_unique(array_map("serialize", array_merge($blueprints, $section->blueprints()))));
+        foreach ($sections as $section) {
+            if ($section === null || $section->type() !== 'pages') {
+                continue;
             }
 
-            return $blueprints;
+            foreach ($section->blueprints() as $blueprint) {
+                $blueprints[$blueprint['name']] = $blueprint;
+            }
         }
 
-        return [];
+        return array_values($blueprints);
     }
 
     /**
@@ -269,22 +288,6 @@ class Page extends Model
     }
 
     /**
-     * Clone the page object and
-     * optionally convert it to a draft object
-     *
-     * @param array $props
-     * @return self
-     */
-    public function clone(array $props = [], string $to = null)
-    {
-        if ($to === null || $to === static::class) {
-            return parent::clone($props);
-        }
-
-        return new $to(array_replace_recursive($this->propertyData, $props));
-    }
-
-    /**
      * Returns the default parent collection
      *
      * @return Collection
@@ -306,22 +309,22 @@ class Page extends Model
      * Returns the content text file
      * which is found by the inventory method
      *
-     * @return string|null
+     * @param string $languageCode
+     * @return string
      */
-    public function contentFile(): ?string
+    public function contentFile(string $languageCode = null): string
     {
+        if ($languageCode !== null) {
+            return $this->root() . '/' . $this->intendedTemplate() . '.' . $languageCode . '.' . $this->kirby()->contentExtension();
+        }
+
         // use the cached version
         if ($this->contentFile !== null) {
             return $this->contentFile;
         }
 
-        // create from template if the template is already set
-        if ($template = $this->intendedTemplate()) {
-            return $this->contentFile = $this->root() . '/' . $template . '.txt';
-        }
-
-        // detect from the inventory
-        return $this->contentFile = $this->inventory()['content'];
+        // create from template
+        return $this->contentFile = $this->root() . '/' . $this->intendedTemplate() . '.' . $this->kirby()->contentExtension();
     }
 
     /**
@@ -363,7 +366,7 @@ class Page extends Model
      */
     public function dirname(): string
     {
-        return $this->num() !== null ? $this->num() . Dir::$numSeparator . $this->slug() : $this->slug();
+        return $this->num() !== null ? $this->num() . Dir::$numSeparator . $this->uid() : $this->uid();
     }
 
     /**
@@ -377,11 +380,17 @@ class Page extends Model
             return $this->diruri;
         }
 
-        if ($parent = $this->parent()) {
-            return $this->diruri = $this->parent()->diruri() . '/' . $this->dirname();
+        if ($this->isDraft() === true) {
+            $dirname = '_drafts/' . $this->dirname();
+        } else {
+            $dirname = $this->dirname();
         }
 
-        return $this->diruri = $this->dirname();
+        if ($parent = $this->parent()) {
+            return $this->diruri = $this->parent()->diruri() . '/' . $dirname;
+        } else {
+            return $this->diruri = $dirname;
+        }
     }
 
     /**
@@ -400,22 +409,6 @@ class Page extends Model
             case 'markdown':
                 return '[' . $this->title() . '](' . $this->url() . ')';
         }
-    }
-
-    /**
-     * Returns all content validation errors
-     *
-     * @return array
-     */
-    public function errors(): array
-    {
-        $errors = [];
-
-        foreach ($this->blueprint()->sections() as $section) {
-            $errors = array_merge($errors, $section->errors());
-        }
-
-        return $errors;
     }
 
     /**
@@ -467,10 +460,10 @@ class Page extends Model
 
         // set the id, depending on the parent
         if ($parent = $this->parent()) {
-            return $this->id = $parent->id() . '/' . $this->slug();
+            return $this->id = $parent->id() . '/' . $this->uid();
         }
 
-        return $this->id = $this->slug();
+        return $this->id = $this->uid();
     }
 
     /**
@@ -496,7 +489,18 @@ class Page extends Model
      */
     public function inventory(): array
     {
-        return $this->inventory = $this->inventory ?? Dir::inventory($this->root());
+        if ($this->inventory !== null) {
+            return $this->inventory;
+        }
+
+        $kirby = $this->kirby();
+
+        return $this->inventory = Dir::inventory(
+            $this->root(),
+            $kirby->contentExtension(),
+            $kirby->contentIgnore(),
+            $kirby->multilang()
+        );
     }
 
     /**
@@ -577,7 +581,7 @@ class Page extends Model
      */
     public function isDraft(): bool
     {
-        return static::class === 'Kirby\Cms\PageDraft';
+        return $this->isDraft;
     }
 
     /**
@@ -699,6 +703,26 @@ class Page extends Model
     }
 
     /**
+     * Checks if the page access is verified.
+     * This is only used for drafts so far.
+     *
+     * @param string $token
+     * @return boolean
+     */
+    public function isVerified(string $token = null)
+    {
+        if ($this->isDraft() === false) {
+            return true;
+        }
+
+        if ($token === null) {
+            return false;
+        }
+
+        return $this->token() === $token;
+    }
+
+    /**
      * Checks if the page is visible
      *
      * @return bool
@@ -770,6 +794,37 @@ class Page extends Model
     }
 
     /**
+     * Returns the panel icon definition
+     * according to the blueprint settings
+     *
+     * @return array
+     */
+    public function panelIcon(): array
+    {
+        if ($icon = $this->blueprint()->icon()) {
+
+            // check for emojis
+            if (strlen($icon) !== Str::length($icon)) {
+                return [
+                    'type'  => $icon,
+                    'back'  => 'black',
+                    'emoji' => true
+                ];
+            }
+
+            return [
+                'type' => $icon,
+                'back' => 'black',
+            ];
+        }
+
+        return [
+            'type' => 'file',
+            'back' => 'black',
+        ];
+    }
+
+    /**
      * Returns the escaped Id, which is
      * used in the panel to make routing work properly
      *
@@ -781,14 +836,53 @@ class Page extends Model
     }
 
     /**
+     * @param string|array|false $settings
+     * @param array|null $thumbSettings
+     * @return array|null
+     */
+    public function panelImage($settings = null, array $thumbSettings = null): ?array
+    {
+        $defaults = [
+            'ratio' => '3/2',
+            'back'  => 'pattern',
+            'cover' => false
+        ];
+
+        // switch the image off
+        if ($settings === false) {
+            return null;
+        }
+
+        if (is_string($settings) === true) {
+            $settings = [
+                'query' => $settings
+            ];
+        }
+
+        if ($image = $this->query($settings['query'] ?? 'page.image', 'Kirby\Cms\File')) {
+            $settings['url'] = $image->thumb($thumbSettings)->url(true) . '?t=' . $image->modified();
+
+            unset($settings['query']);
+
+            return array_merge($defaults, $settings);
+        }
+
+        return null;
+    }
+
+    /**
      * Returns the url to the editing view
      * in the panel
      *
      * @return string
      */
-    public function panelUrl(): string
+    public function panelUrl(bool $relative = false): string
     {
-        return $this->kirby()->url('panel') . '/pages/' . $this->panelId();
+        if ($relative === true) {
+            return '/pages/' . $this->panelId();
+        } else {
+            return $this->kirby()->url('panel') . '/pages/' . $this->panelId();
+        }
     }
 
     /**
@@ -799,6 +893,20 @@ class Page extends Model
     public function parent()
     {
         return $this->parent;
+    }
+
+    /**
+     * Returns the parent id, if a parent exists
+     *
+     * @return string|null
+     */
+    public function parentId(): ?string
+    {
+        if ($parent = $this->parent()) {
+            return $parent->id();
+        }
+
+        return null;
     }
 
     /**
@@ -834,11 +942,51 @@ class Page extends Model
     /**
      * Returns the permissions object for this page
      *
-     * @return BlueprintOptions
+     * @return PagePermissions
      */
     public function permissions()
     {
-        return $this->blueprint()->options();
+        return new PagePermissions($this);
+    }
+
+    /**
+     * Draft preview Url
+     *
+     * @return string
+     */
+    public function previewUrl(): string
+    {
+        if ($this->isDraft() === true) {
+            return $this->url() . '?token=' . $this->token();
+        } else {
+            return $this->url();
+        }
+    }
+
+    /**
+     * Creates a string query, starting from the model
+     *
+     * @param string|null $query
+     * @param string|null $expect
+     * @return mixed
+     */
+    public function query(string $query = null, string $expect = null)
+    {
+        if ($query === null) {
+            return null;
+        }
+
+        $result = Str::query($query, [
+            'kirby' => $this->kirby(),
+            'site'  => $this->site(),
+            'page'  => $this
+        ]);
+
+        if ($expect !== null && is_a($result, $expect) !== true) {
+            return null;
+        }
+
+        return $result;
     }
 
     /**
@@ -950,6 +1098,18 @@ class Page extends Model
     }
 
     /**
+     * Sets the draft flag
+     *
+     * @param boolean $isDraft
+     * @return self
+     */
+    protected function setIsDraft(bool $isDraft = null): self
+    {
+        $this->isDraft = $isDraft ?? false;
+        return $this;
+    }
+
+    /**
      * Sets the sorting number
      *
      * @param integer $num
@@ -1019,11 +1179,19 @@ class Page extends Model
     /**
      * Returns the slug of the page
      *
+     * @param string|null $languageCode
      * @return string
      */
-    public function slug(): string
+    public function slug(string $languageCode = null): string
     {
-        return $this->slug;
+        if ($this->kirby()->multilang() === true) {
+            if ($languageCode === null) {
+                $languageCode = $this->kirby()->language()->code();
+            }
+            return $this->translations()->find($languageCode)->slug() ?? $this->slug;
+        } else {
+            return $this->slug;
+        }
     }
 
     /**
@@ -1084,18 +1252,32 @@ class Page extends Model
     public function toArray(): array
     {
         return [
-            'children'  => $this->children()->keys(),
-            'content'   => $this->content()->toArray(),
-            'files'     => $this->files()->keys(),
-            'id'        => $this->id(),
-            'mediaUrl'  => $this->mediaUrl(),
-            'mediaRoot' => $this->mediaRoot(),
-            'num'       => $this->num(),
-            'parent'    => $this->parent() ? $this->parent()->id() : null,
-            'slug'      => $this->slug(),
-            'template'  => $this->template(),
-            'url'       => $this->url()
+            'children'     => $this->children()->keys(),
+            'content'      => $this->content()->toArray(),
+            'files'        => $this->files()->keys(),
+            'id'           => $this->id(),
+            'mediaUrl'     => $this->mediaUrl(),
+            'mediaRoot'    => $this->mediaRoot(),
+            'num'          => $this->num(),
+            'parent'       => $this->parent() ? $this->parent()->id(): null,
+            'slug'         => $this->slug(),
+            'template'     => $this->template(),
+            'translations' => $this->translations()->toArray(),
+            'uid'          => $this->uid(),
+            'uri'          => $this->uri(),
+            'url'          => $this->url()
         ];
+    }
+
+    /**
+     * Returns a verification token, which
+     * is used for the draft authentication
+     *
+     * @return string
+     */
+    protected function token(): string
+    {
+        return sha1($this->id() . $this->template());
     }
 
     /**
@@ -1118,24 +1300,53 @@ class Page extends Model
     }
 
     /**
-     * Returns the UID of the page
+     * Returns the UID of the page.
+     * The UID is basically the same as the
+     * slug, but stays the same on
+     * multi-language sites. Whereas the slug
+     * can be translated.
      *
      * @see self::slug()
      * @return string
      */
     public function uid(): string
     {
-        return $this->slug();
+        return $this->slug;
+    }
+
+    /**
+     * The uri is the same as the id, except
+     * that it will be translated in multi-language setups
+     *
+     * @param string|null $languageCode
+     * @return string
+     */
+    public function uri(string $languageCode = null): string
+    {
+        // set the id, depending on the parent
+        if ($parent = $this->parent()) {
+            return $parent->uri($languageCode) . '/' . $this->slug($languageCode);
+        }
+
+        return $this->slug($languageCode);
     }
 
     /**
      * Returns the Url
      *
-     * @param array|null $options
+     * @param array|string|null $options
      * @return string
      */
     public function url($options = null): string
     {
+        if ($this->kirby()->multilang() === true) {
+            if (is_string($options) === true) {
+                return $this->urlForLanguage($options);
+            } else {
+                return $this->urlForLanguage(null, $options);
+            }
+        }
+
         if ($options !== null) {
             return Url::to($this->url(), $options);
         }
@@ -1149,9 +1360,26 @@ class Page extends Model
         }
 
         if ($parent = $this->parent()) {
-            return $this->url = $this->parent()->url() . '/' . $this->slug();
+            return $this->url = $this->parent()->url() . '/' . $this->uid();
         }
 
-        return $this->url = $this->kirby()->url('base') . '/' . $this->slug();
+        return $this->url = $this->kirby()->url('base') . '/' . $this->uid();
+    }
+
+    public function urlForLanguage($language = null, array $options = null): string
+    {
+        if ($options !== null) {
+            return Url::to($this->urlForLanguage($language), $options);
+        }
+
+        if ($this->isHomePage() === true) {
+            return $this->url = $this->site()->urlForLanguage($language);
+        }
+
+        if ($parent = $this->parent()) {
+            return $this->url = $this->parent()->urlForLanguage($language) . '/' . $this->slug($language);
+        }
+
+        return $this->url = $this->site()->urlForLanguage($language) . '/' . $this->slug($language);
     }
 }

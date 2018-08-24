@@ -8,12 +8,24 @@ namespace Kirby\Cms;
  */
 class UserBlueprint extends Blueprint
 {
-    public function options()
+    public function __construct(array $props)
     {
-        if (is_a($this->options, 'Kirby\Cms\UserBlueprintOptions') === true) {
-            return $this->options;
-        }
+        parent::__construct($props);
 
-        return $this->options = new UserBlueprintOptions($this->model, $this->options);
+        // normalize all available page options
+        $this->props['options'] = $this->normalizeOptions(
+            $props['options'] ?? true,
+            // defaults
+            [
+                'create'         => null,
+                'changeEmail'    => null,
+                'changeLanguage' => null,
+                'changeName'     => null,
+                'changePassword' => null,
+                'changeRole'     => null,
+                'delete'         => null,
+                'update'         => null,
+            ]
+        );
     }
 }

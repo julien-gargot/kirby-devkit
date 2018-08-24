@@ -3,11 +3,13 @@
 namespace Kirby\Cms;
 
 use Exception;
+use Kirby\Exception\NotFoundException;
 use Kirby\Form\Field;
 use Kirby\Session\Session;
 use Kirby\Toolkit\Dir;
 use Kirby\Toolkit\I18n;
 use Kirby\Toolkit\Str;
+use Throwable;
 
 trait AppUsers
 {
@@ -69,6 +71,36 @@ trait AppUsers
     }
 
     /**
+     * Become any existing user
+     *
+     * @param string|null $who
+     * @return self
+     */
+    public function impersonate(string $who = null)
+    {
+        if ($who === null) {
+            $this->user = null;
+            return $this;
+        }
+
+        if ($who === 'kirby') {
+            $this->user = new User([
+                'email' => 'kirby@getkirby.com',
+                'role'  => 'admin'
+            ]);
+
+            return $this;
+        }
+
+        if ($user = $this->users()->find($who)) {
+            $this->user = $user;
+            return $this;
+        }
+
+        throw new NotFoundException('The user "' . $who . '" cannot be found');
+    }
+
+    /**
      * Set the currently active user id
      *
      * @param  User|string $user
@@ -121,9 +153,10 @@ trait AppUsers
         }
 
         try {
+            $basicAuth     = $this->options['api']['basicAuth'] ?? false;
             $authorization = $this->request()->headers()['Authorization'] ?? '';
 
-            if (Str::startsWith($authorization, 'Basic ') === true) {
+            if ($basicAuth === true && Str::startsWith($authorization, 'Basic ') === true) {
                 return $this->user = $this->currentUserFromBasicAuth($authorization);
             } else {
                 return $this->user = $this->currentUserFromSession($session);

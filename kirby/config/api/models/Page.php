@@ -42,7 +42,7 @@ return [
             return $page->num();
         },
         'options' => function (Page $page) {
-            return $page->blueprint()->options()->toArray();
+            return $page->permissions()->toArray();
         },
         'parent' => function (Page $page) {
             return $page->parent();
@@ -54,7 +54,11 @@ return [
             return $page->prev();
         },
         'siblings' => function (Page $page) {
-            return $page->siblings();
+            if ($page->isDraft() === true) {
+                return $page->parentModel()->children()->not($page);
+            } else {
+                return $page->siblings();
+            }
         },
         'slug' => function (Page $page) {
             return $page->slug();
@@ -69,7 +73,7 @@ return [
             return $page->title()->value();
         },
         'url' => function (Page $page) {
-            return $page->url();
+            return $page->previewUrl();
         },
     ],
     'type' => Page::class,
@@ -96,6 +100,7 @@ return [
             'id',
             'blueprint',
             'status',
+            'options',
             'next'    => ['id', 'slug', 'title'],
             'parents' => ['id', 'slug', 'title'],
             'prev'    => ['id', 'slug', 'title'],

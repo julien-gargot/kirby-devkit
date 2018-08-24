@@ -47,6 +47,13 @@ return [
         }
     ],
     [
+        'pattern' => 'site/blueprints',
+        'method'  => 'GET',
+        'action'  => function () {
+            return $this->site()->blueprints($this->requestQuery('section'));
+        }
+    ],
+    [
         'pattern' => 'site/files',
         'method'  => 'GET',
         'action'  => function () {
@@ -71,6 +78,13 @@ return [
         'method'  => 'POST',
         'action'  => function () {
             return $this->site()->files()->query($this->requestBody());
+        }
+    ],
+    [
+        'pattern' => 'site/files/sort',
+        'method'  => 'PATCH',
+        'action'  => function () {
+            return $this->site()->files()->changeSort($this->requestBody('files'));
         }
     ],
     [
@@ -107,7 +121,7 @@ return [
         'pattern' => 'site/files/(:any)/options',
         'method'  => 'GET',
         'action'  => function (string $filename) {
-            return $this->file(null, $filename)->blueprint()->options()->toArray();
+            return $this->file(null, $filename)->permissions()->toArray();
         }
     ],
     [
@@ -118,17 +132,19 @@ return [
         }
     ],
     [
-        'pattern' => 'site/files/(:any)/sections/(:any)/(:all?)',
-        'method'  => 'ALL',
-        'action'  => function (string $filename, string $sectionName, string $path = '') {
-            return $this->file(null, $filename)->blueprint()->section($sectionName)->apiCall($this, $path);
+        'pattern' => 'site/files/(:any)/sections/(:any)',
+        'method'  => 'GET',
+        'action'  => function (string $filename, string $sectionName) {
+            if ($section = $this->file(null, $filename)->blueprint()->section($sectionName)) {
+                return $section->toResponse();
+            }
         }
     ],
     [
         'pattern' => 'site/options',
         'method'  => 'GET',
         'action'  => function () {
-            return $this->site()->blueprint()->options()->toArray();
+            return $this->site()->permissions()->toArray();
         }
     ],
     [
@@ -139,10 +155,12 @@ return [
         }
     ],
     [
-        'pattern' => 'site/sections/(:any)/(:all?)',
-        'method'  => 'ALL',
-        'action'  => function (string $sectionName, string $path = '') {
-            return $this->site()->blueprint()->section($sectionName)->apiCall($this, $path);
+        'pattern' => 'site/sections/(:any)',
+        'method'  => 'GET',
+        'action'  => function (string $sectionName) {
+            if ($section = $this->site()->blueprint()->section($sectionName)) {
+                return $section->toResponse();
+            }
         }
     ]
 

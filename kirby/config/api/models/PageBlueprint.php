@@ -14,10 +14,13 @@ return [
             return $blueprint->num();
         },
         'options' => function (PageBlueprint $blueprint) {
-            return $blueprint->options()->toArray();
+            return $blueprint->options();
+        },
+        'status' => function (PageBlueprint $blueprint) {
+            return $blueprint->status();
         },
         'tabs' => function (PageBlueprint $blueprint) {
-            return $blueprint->tabs()->toArray();
+            return $blueprint->tabs();
         },
         'title' => function (PageBlueprint $blueprint) {
             return $blueprint->title();

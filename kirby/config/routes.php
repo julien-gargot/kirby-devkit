@@ -21,13 +21,24 @@ return function ($kirby) {
     $routes = [
         [
             'pattern' => '',
+            'method'  => 'ALL',
+            'env'     => 'site',
             'action'  => function () use ($kirby) {
-                return $kirby->site()->homePage();
+
+                $home = $kirby->site()->homePage();
+
+                if ($kirby->multilang() === true && $kirby->url() !== $home->url()) {
+                    return Response::redirect($kirby->site()->url());
+                } else {
+                    return $home;
+                }
+
             }
         ],
         [
             'pattern' => $api . '/(:all)',
             'method'  => 'ALL',
+            'env'     => 'api',
             'action'  => function ($path = null) use ($kirby) {
                 if ($kirby->option('api') === false) {
                     return null;
@@ -45,12 +56,14 @@ return function ($kirby) {
         ],
         [
             'pattern' => 'media/plugins/index.(css|js)',
+            'env'     => 'media',
             'action'  => function (string $extension) use ($kirby) {
                 return new Response(PluginAssets::index($extension), F::extensionToMime($extension));
             }
         ],
         [
             'pattern' => 'media/plugins/(:any)/(:any)/(:all).(css|gif|js|jpg|png|svg|webp)',
+            'env'     => 'media',
             'action'  => function (string $provider, string $pluginName, string $filename, string $extension) use ($kirby) {
 
                 if ($url = PluginAssets::resolve($provider . '/' . $pluginName, $filename . '.' . $extension)) {
@@ -60,6 +73,7 @@ return function ($kirby) {
         ],
         [
             'pattern' => $panel . '/(:all?)',
+            'env'     => 'panel',
             'action'  => function () use ($kirby) {
                 if ($kirby->option('panel') === false) {
                     return null;
@@ -70,6 +84,7 @@ return function ($kirby) {
         ],
         [
             'pattern' => 'media/pages/(:all)/(:any)',
+            'env'     => 'media',
             'action'  => function ($path, $filename) use ($kirby) {
                 $page = $kirby->page($path) ?? $kirby->site()->draft($path);
 
@@ -80,6 +95,7 @@ return function ($kirby) {
         ],
         [
             'pattern' => 'media/site/(:any)',
+            'env'     => 'media',
             'action'  => function ($filename) use ($kirby) {
                 if ($url = Media::link($kirby->site(), $filename)) {
                     return Response::redirect($url, 307);
@@ -88,6 +104,7 @@ return function ($kirby) {
         ],
         [
             'pattern' => 'media/users/(:any)/(:any)',
+            'env'     => 'media',
             'action'  => function ($id, $filename) use ($kirby) {
                 $user = $kirby->users()->find($id);
 
@@ -99,12 +116,14 @@ return function ($kirby) {
     ];
 
     // Multi-language setup
-    if (empty($kirby->options['languages']) === false) {
+    if ($kirby->multilang() === true) {
+
         foreach ($kirby->languages() as $language) {
             $routes[] = [
-                'pattern' => trim($language->pattern() . '/(:all)', '/'),
+                'pattern' => trim($language->pattern() . '/(:all?)', '/'),
                 'method'  => 'ALL',
-                'action'  => function ($path) use ($kirby, $language) {
+                'env'     => 'site',
+                'action'  => function ($path = null) use ($kirby, $language) {
                     return $kirby->resolve($path, $language);
                 }
             ];
@@ -117,6 +136,7 @@ return function ($kirby) {
     $routes[] = [
         'pattern' => '(:all)',
         'method'  => 'ALL',
+        'env'     => 'site',
         'action'  => function (string $path) use ($kirby) {
             return $kirby->resolve($path);
         }

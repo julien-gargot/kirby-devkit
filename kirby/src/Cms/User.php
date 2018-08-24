@@ -21,11 +21,9 @@ use Throwable;
  * @link      http://getkirby.com
  * @copyright Bastian Allgeier
  */
-class User extends Model
+class User extends ModelWithContent
 {
     use UserActions;
-
-    use HasContent;
     use HasSiblings;
 
     /**
@@ -76,6 +74,25 @@ class User extends Model
     protected $role;
 
     /**
+     * Modified getter to also return fields
+     * from the content
+     *
+     * @param string $method
+     * @param array $arguments
+     * @return mixed
+     */
+    public function __call(string $method, array $arguments = [])
+    {
+        // public property access
+        if (isset($this->$method) === true) {
+            return $this->$method;
+        }
+
+        // return site content otherwise
+        return $this->content()->get($method, $arguments);
+    }
+
+    /**
      * Creates a new User object
      *
      * @param array $props
@@ -97,6 +114,21 @@ class User extends Model
             'content' => $this->content(),
             'role'    => $this->role()
         ]);
+    }
+
+    /**
+     * Returns the url to the api endpoint
+     *
+     * @param bool $relative
+     * @return string
+     */
+    public function apiUrl(bool $relative = false): string
+    {
+        if ($relative === true) {
+            return 'users/' . $this->id();
+        } else {
+            return $this->kirby()->url('api') . '/users/' . $this->id();
+        }
     }
 
     /**
@@ -151,9 +183,10 @@ class User extends Model
     /**
      * Returns the content
      *
+     * @param string|null $languageCode
      * @return Content
      */
-    public function content(): Content
+    public function content(?string $languageCode = null): Content
     {
         if ($this->content !== null) {
             return $this->content;
@@ -178,6 +211,27 @@ class User extends Model
     public function contentFile(): string
     {
         return $this->root() . '/user.txt';
+    }
+
+    /**
+     * Prepares the content for the text file
+     *
+     * @return array
+     */
+    public function contentFileData(): array
+    {
+        $content = $this->content()->toArray();
+
+        // store main information in the content file
+        $content['language'] = $this->language();
+        $content['name']     = $this->name();
+        $content['password'] = $this->hashPassword($this->password());
+        $content['role']     = $this->role()->id();
+
+        // remove the email. It's already stored in the directory
+        unset($content['email']);
+
+        return $content;
     }
 
     /**
@@ -206,22 +260,6 @@ class User extends Model
     public function email(): string
     {
         return $this->email;
-    }
-
-    /**
-     * Returns all content validation errors
-     *
-     * @return array
-     */
-    public function errors(): array
-    {
-        $errors = [];
-
-        foreach ($this->blueprint()->sections() as $section) {
-            $errors = array_merge($errors, $section->errors());
-        }
-
-        return $errors;
     }
 
     /**
@@ -285,6 +323,17 @@ class User extends Model
     }
 
     /**
+     * Checks if the current user is the virtual
+     * Kirby user
+     *
+     * @return boolean
+     */
+    public function isKirby(): bool
+    {
+        return $this->email() === 'kirby@getkirby.com';
+    }
+
+    /**
      * Checks if the current user is this user
      *
      * @return boolean
@@ -330,9 +379,9 @@ class User extends Model
      *
      * @param string $password
      * @param Session|array $session Session options or session object to set the user in
-     * @return void
+     * @return bool
      */
-    public function login(string $password, $session = null)
+    public function login(string $password, $session = null): bool
     {
         if ($this->role()->permissions()->for('access', 'panel') === false) {
             throw new PermissionException(['key' => 'access.panel']);
@@ -343,6 +392,8 @@ class User extends Model
         }
 
         $this->loginPasswordless($session);
+
+        return true;
     }
 
     /**
@@ -411,6 +462,45 @@ class User extends Model
     }
 
     /**
+     * Create a dummy nobody
+     *
+     * @return self
+     */
+    public static function nobody(): self
+    {
+        return new static([
+            'email' => 'nobody@getkirby.com',
+            'role'  => 'nobody'
+        ]);
+    }
+
+    /**
+     * Creates a string query, starting from the model
+     *
+     * @param string|null $query
+     * @param string|null $expect
+     * @return mixed
+     */
+    public function query(string $query = null, string $expect = null)
+    {
+        if ($query === null) {
+            return null;
+        }
+
+        $result = Str::query($query, [
+            'kirby' => $kirby = $this->kirby(),
+            'site'  => $kirby->site(),
+            'user'  => $this
+        ]);
+
+        if ($expect !== null && is_a($result, $expect) !== true) {
+            return null;
+        }
+
+        return $result;
+    }
+
+    /**
      * Returns the username
      * which is the given name or the email
      * as a fallback
@@ -426,11 +516,16 @@ class User extends Model
      * Returns the url to the editing view
      * in the panel
      *
+     * @param bool $relative
      * @return string
      */
-    public function panelUrl(): string
+    public function panelUrl(bool $relative = false): string
     {
-        return $this->kirby()->url('panel') . '/users/' . $this->id();
+        if ($relative === true) {
+            return '/users/' . $this->id();
+        } else {
+            return $this->kirby()->url('panel') . '/users/' . $this->id();
+        }
     }
 
     /**
@@ -444,11 +539,11 @@ class User extends Model
     }
 
     /**
-     * @return UserBlueprintOptions
+     * @return UserPermissions
      */
-    public function permissions(): UserBlueprintOptions
+    public function permissions()
     {
-        return $this->blueprint()->options();
+        return new UserPermissions($this);
     }
 
     /**
@@ -490,6 +585,22 @@ class User extends Model
     protected function rules()
     {
         return new UserRules();
+    }
+
+    /**
+     * Sets the Blueprint object
+     *
+     * @param array|null $blueprint
+     * @return self
+     */
+    protected function setBlueprint(array $blueprint = null): self
+    {
+        if ($blueprint !== null) {
+            $blueprint['model'] = $this;
+            $this->blueprint = new UserBlueprint($blueprint);
+        }
+
+        return $this;
     }
 
     /**
