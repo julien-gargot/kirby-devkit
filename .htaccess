@@ -21,6 +21,10 @@ RewriteEngine on
 #
 # RewriteBase /
 
+# block files and folders beginning with a dot, such as .git
+# except for the .well-known folder, which is used for Let's Encrypt and security.txt
+RewriteRule (^|/)\.(?!well-known\/) index.php [L]
+
 # block text files in the content folder from being accessed directly
 RewriteRule ^content/(.*)\.(txt|md|mdown)$ index.php [L]
 
@@ -41,6 +45,7 @@ RewriteRule ^(.*) index.php [L]
 
 </IfModule>
 
+# compress text file responses
 <IfModule mod_deflate.c>
 AddOutputFilterByType DEFLATE text/plain
 AddOutputFilterByType DEFLATE text/html
