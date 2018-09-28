@@ -120,6 +120,28 @@ class Dir
     }
 
     /**
+     * Checks if the directory is readable
+     *
+     * @param string $dir
+     * @return boolean
+     */
+    public static function isReadable(string $dir): bool
+    {
+        return is_readable($dir);
+    }
+
+    /**
+     * Checks if the directory is writable
+     *
+     * @param string $dir
+     * @return boolean
+     */
+    public static function isWritable(string $dir): bool
+    {
+        return is_writable($dir);
+    }
+
+    /**
      * Create a (symbolic) link to a directory
      *
      * @param string $source
@@ -174,6 +196,33 @@ class Dir
     }
 
     /**
+     * Recursively check when the dir and all
+     * subfolders have been modified for the last time.
+     *
+     * @param   string   $dir The path of the directory
+     * @param   string   $format
+     * @param   string   $handler
+     * @return  int
+     */
+    public static function modified(string $dir, string $format = null, string $handler = 'date')
+    {
+        $modified = filemtime($dir);
+        $items    = static::read($dir);
+
+        foreach ($items as $item) {
+            if (is_file($dir . '/' . $item) === true) {
+                $newModified = filemtime($dir . '/' . $item);
+            } else {
+                $newModified = static::modified($dir . '/' . $item);
+            }
+
+            $modified = ($newModified > $modified) ? $newModified : $modified;
+        }
+
+        return $format !== null ? $handler($format, $modified) : $modified;
+    }
+
+    /**
      * Moves a directory to a new location
      *
      * @param   string  $old The current path of the directory
@@ -195,6 +244,17 @@ class Dir
         }
 
         return rename($old, $new);
+    }
+
+    /**
+     * Returns a nicely formatted size of all the contents of the folder
+     *
+     * @param string $dir The path of the directory
+     * @return mixed
+     */
+    public static function niceSize(string $dir)
+    {
+        return F::niceSize(static::size($dir));
     }
 
     /**
@@ -249,5 +309,70 @@ class Dir
         }
 
         return rmdir($dir);
+    }
+
+    /**
+     * Gets the size of the directory and all subfolders and files
+     *
+     * @param   string $dir The path of the directory
+     * @return  mixed
+     */
+    public static function size(string $dir)
+    {
+        if (is_dir($dir) === false) {
+            return false;
+        }
+
+        $size  = 0;
+        $items = static::read($dir);
+
+        foreach ($items as $item) {
+            $root = $dir . '/' . $item;
+
+            if (is_dir($root) === true) {
+                $size += static::size($root);
+            } elseif (is_file($root) === true) {
+                $size += F::size($root);
+            }
+        }
+
+        return $size;
+
+
+
+        // It's easier to handle this with the Folder class
+        $object = new Folder($dir);
+        return $object->size();
+    }
+
+    /**
+     * Checks if the directory or any subdirectory has been
+     * modified after the given timestamp
+     *
+     * @param string $dir
+     * @param int $time
+     * @return boolean
+     */
+    public static function wasModifiedAfter(string $dir, int $time): boolean
+    {
+        if (filemtime($dir) > $time) {
+            return true;
+        }
+
+        $content = static::read($dir);
+
+        foreach ($content as $item) {
+            $subdir = $dir . '/' . $item;
+
+            if (filemtime($subdir) > $time) {
+                return true;
+            }
+
+            if (is_dir($subdir) === true && static::wasModifiedAfter($subdir, $time) === true) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

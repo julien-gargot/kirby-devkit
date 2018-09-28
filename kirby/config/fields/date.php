@@ -2,6 +2,9 @@
 
 return [
     'props' => [
+        'default' => function ($default = null) {
+            return $this->toDate($default);
+        },
         'icon' => function (string $icon = "calendar") {
             return $icon;
         },
@@ -16,12 +19,9 @@ return [
         },
         'value' => function ($value = null) {
             return $this->toDate($value);
-        }
+        },
     ],
     'computed' => [
-        'default' => function () {
-            return $this->props['default'] ?? ($this->required() ? date(DATE_W3C) : null);
-        },
         'format' => function () {
             return $this->props['format'] ?? ($this->time() === false ? 'Y-m-d' : 'Y-m-d H:i');
         }
@@ -41,7 +41,6 @@ return [
         },
     ],
     'validations' => [
-        'required',
         'date'
     ]
 ];

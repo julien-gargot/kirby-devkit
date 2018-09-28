@@ -7,6 +7,7 @@ use Kirby\Data\Data;
 use Kirby\Exception\Exception;
 use Kirby\Exception\NotFoundException;
 use Kirby\Toolkit\A;
+use Kirby\Toolkit\F;
 use Kirby\Toolkit\Str;
 use Throwable;
 
@@ -227,22 +228,36 @@ class Page extends ModelWithContent
     /**
      * Returns an array with all blueprints that are available for the page
      *
-     * @params string $inSection
      * @return array
      */
     public function blueprints(string $inSection = null): array
     {
-        $blueprints = [];
-        $blueprint  = $this->blueprint();
-        $sections   = $inSection !== null ? [$blueprint->section($inSection)] : $blueprint->sections();
+        if ($inSection !== null) {
+            return $this->blueprint()->section($inSection)->blueprints();
+        }
 
-        foreach ($sections as $section) {
-            if ($section === null || $section->type() !== 'pages') {
+        $blueprints      = [];
+        $templates       = $this->blueprint()->options()['changeTemplate'] ?? false;
+        $currentTemplate = $this->intendedTemplate()->name();
+
+        if ($templates === false) {
+            return [];
+        }
+
+        foreach ($templates as $template) {
+            if ($currentTemplate === $template) {
                 continue;
             }
 
-            foreach ($section->blueprints() as $blueprint) {
-                $blueprints[$blueprint['name']] = $blueprint;
+            try {
+                $props = Blueprint::load('pages/' . $template);
+
+                $blueprints[] = [
+                    'name'  => basename($props['name']),
+                    'title' => $props['title'],
+                ];
+            } catch (Page $e) {
+                // skip invalid blueprints
             }
         }
 
@@ -250,45 +265,22 @@ class Page extends ModelWithContent
     }
 
     /**
-     * Checks if the page can be cached in the
-     * pages cache. This will also check if one
-     * of the ignore rules from the config kick in.
+     * Builds the cache id for the page
      *
-     * @return boolean
+     * @param string $contentType
+     * @return string
      */
-    protected function canBeCached(): bool
+    protected function cacheId(string $contentType): string
     {
-        $kirby   = $this->kirby();
-        $cache   = $kirby->cache('pages');
-        $request = $kirby->request();
-        $options = $cache->options();
-        $ignore  = $options['ignore'] ?? null;
+        $cacheId = [$this->id()];
 
-        // the pages cache is switched off
-        if (($options['active'] ?? false) === false) {
-            return false;
+        if ($this->kirby()->multilang() === true) {
+            $cacheId[] = $this->kirby()->language()->code();
         }
 
-        // disable the pages cache for incomin requests or special data
-        if ((string)$request->method() !== 'GET' || empty($request->data()) === false) {
-            return false;
-        }
+        $cacheId[] = $contentType;
 
-        // check for a custom ignore rule
-        if (is_a($ignore, 'Closure') === true) {
-            if ($ignore($this) === true) {
-                return false;
-            }
-        }
-
-        // ignore pages by id
-        if (is_array($ignore) === true) {
-            if (in_array($this->id(), $ignore) === true) {
-                return false;
-            }
-        }
-
-        return true;
+        return implode('.', $cacheId);
     }
 
     /**
@@ -318,7 +310,13 @@ class Page extends ModelWithContent
      */
     public function contentFile(string $languageCode = null): string
     {
-        if ($languageCode !== null) {
+        // get the current language code if no code is passed
+        if ($languageCode === null) {
+            $languageCode = $this->kirby()->languageCode();
+        }
+
+        // build a multi-lang file path
+        if ($languageCode !== null && $languageCode !== '') {
             return $this->root() . '/' . $this->intendedTemplate() . '.' . $languageCode . '.' . $this->kirby()->contentExtension();
         }
 
@@ -545,6 +543,50 @@ class Page extends ModelWithContent
     }
 
     /**
+     * Checks if the page can be cached in the
+     * pages cache. This will also check if one
+     * of the ignore rules from the config kick in.
+     *
+     * @return boolean
+     */
+    public function isCacheable(): bool
+    {
+        $kirby   = $this->kirby();
+        $cache   = $kirby->cache('pages');
+        $options = $cache->options();
+        $ignore  = $options['ignore'] ?? null;
+
+        // the pages cache is switched off
+        if (($options['active'] ?? false) === false) {
+            return false;
+        }
+
+        // inspect the current request
+        $request = $kirby->request();
+
+        // disable the pages cache for any request types but GET or special data
+        if ((string)$request->method() !== 'GET' || empty($request->data()) === false) {
+            return false;
+        }
+
+        // check for a custom ignore rule
+        if (is_a($ignore, 'Closure') === true) {
+            if ($ignore($this) === true) {
+                return false;
+            }
+        }
+
+        // ignore pages by id
+        if (is_array($ignore) === true) {
+            if (in_array($this->id(), $ignore) === true) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Checks if the page is a child of the given page
      *
      * @return boolean
@@ -671,29 +713,13 @@ class Page extends ModelWithContent
     }
 
     /**
-     * Check if a page can be sorted
+     * Checks if the page is sortable
      *
      * @return boolean
      */
     public function isSortable(): bool
     {
-        if ($this->isErrorPage() === true) {
-            return false;
-        }
-
-        if ($this->isListed() !== true) {
-            return false;
-        }
-
-        if ($this->blueprint()->num() !== 'default') {
-            return false;
-        }
-
-        if ($this->blueprint()->options()->sort() !== true) {
-            return false;
-        }
-
-        return true;
+        return $this->permissions()->can('sort');
     }
 
     /**
@@ -780,11 +806,12 @@ class Page extends ModelWithContent
      * Returns the last modification date of the page
      *
      * @param string $format
+     * @param string|null $handler
      * @return int|string
      */
-    public function modified(string $format = 'U')
+    public function modified(string $format = 'U', string $handler = null)
     {
-        return date($format, filemtime($this->contentFile()));
+        return F::modified($this->contentFile(), $format, $handler ?? $this->kirby()->option('date.handler', 'date'));
     }
 
     /**
@@ -1002,48 +1029,47 @@ class Page extends ModelWithContent
      *
      * @param array $data
      * @param string $contentType
-     * @return string
+     * @param integer $code
+     * @return Response
      */
-    public function render(array $data = [], $contentType = 'html'): string
+    public function render(array $data = [], $contentType = 'html', int $code = 200): Response
     {
         $kirby = $this->kirby();
         $cache = $cacheId = $result = null;
 
         // try to get the page from cache
-        if (empty($data) === true && $this->canBeCached() === true) {
+        if (empty($data) === true && $this->isCacheable() === true) {
             $cache   = $kirby->cache('pages');
-            $cacheId = $this->id() . '.' . $contentType;
+            $cacheId = $this->cacheId($contentType);
             $result  = $cache->get($cacheId);
+        }
 
-            if ($result !== null) {
-                return $result;
+        // fetch the page regularly
+        if ($result === null) {
+            $kirby->data = $this->controller($data, $contentType);
+
+            if ($contentType === 'html') {
+                $template = $this->template();
+            } else {
+                $template = $this->representation($contentType);
+            }
+
+            if ($template->exists() === false) {
+                throw new NotFoundException([
+                    'key' => 'template.default.notFound'
+                ]);
+            }
+
+            // render the page
+            $result = $template->render($kirby->data);
+
+            // cache the result
+            if ($cache !== null) {
+                $cache->set($cacheId, $result);
             }
         }
 
-        // fetch all data for the page
-        $kirby->data = $this->controller($data, $contentType);
-
-        if ($contentType === 'html') {
-            $template = $this->template();
-        } else {
-            $template = $this->representation($contentType);
-        }
-
-        if ($template->exists() === false) {
-            throw new NotFoundException([
-                'key' => 'template.default.notFound'
-            ]);
-        }
-
-        // render the page
-        $result = $template->render($kirby->data);
-
-        // render the template and cache the result
-        if ($cache !== null) {
-            $cache->set($cacheId, $result);
-        }
-
-        return new Response($result, $contentType);
+        return new Response($result, $contentType, $code);
     }
 
     /**
@@ -1190,7 +1216,7 @@ class Page extends ModelWithContent
     {
         if ($this->kirby()->multilang() === true) {
             if ($languageCode === null) {
-                $languageCode = $this->kirby()->language()->code();
+                $languageCode = $this->kirby()->languageCode();
             }
             return $this->translations()->find($languageCode)->slug() ?? $this->slug;
         } else {

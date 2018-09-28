@@ -11,6 +11,7 @@ return [
     'line'        => __DIR__ . '/fields/line.php',
     'multiselect' => __DIR__ . '/fields/multiselect.php',
     'number'      => __DIR__ . '/fields/number.php',
+    'pages'       => __DIR__ . '/fields/pages.php',
     'radio'       => __DIR__ . '/fields/radio.php',
     'range'       => __DIR__ . '/fields/range.php',
     'select'      => __DIR__ . '/fields/select.php',
@@ -22,5 +23,5 @@ return [
     'time'        => __DIR__ . '/fields/time.php',
     'toggle'      => __DIR__ . '/fields/toggle.php',
     'url'         => __DIR__ . '/fields/url.php',
-    'user'        => __DIR__ . '/fields/user.php'
+    'users'       => __DIR__ . '/fields/users.php'
 ];

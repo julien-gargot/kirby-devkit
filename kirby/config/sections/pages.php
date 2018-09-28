@@ -248,12 +248,16 @@ return [
             // convert every template to a usable option array
             // for the template select box
             foreach ($templates as $template) {
-                $props = Blueprint::load('pages/' . $template);
+                try {
+                    $props = Blueprint::load('pages/' . $template);
 
-                $blueprints[] = [
-                    'name'  => basename($props['name']),
-                    'title' => $props['title'],
-                ];
+                    $blueprints[] = [
+                        'name'  => basename($props['name']),
+                        'title' => $props['title'],
+                    ];
+                } catch (Throwable $e) {
+                    // skip invalid blueprints
+                }
             }
 
             return $blueprints;

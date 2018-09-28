@@ -2,8 +2,14 @@
 
 return [
     'props' => [
-        'layout' => function (string $value = 'list') {
-            return $value;
+        'default' => function ($default = null) {
+            return $this->toFiles($default);
+        },
+        'layout' => function (string $layout = 'list') {
+            return $layout;
+        },
+        'min' => function (int $min = null) {
+            return $min;
         },
         'max' => function (int $max = null) {
             return $max;
@@ -21,6 +27,11 @@ return [
 
         },
         'value' => function ($value = null) {
+            return $this->toFiles($value);
+        },
+    ],
+    'methods' => [
+        'toFiles' => function ($value = null) {
 
             $files = [];
             $kirby = kirby();
@@ -36,22 +47,25 @@ return [
                         'filename' => $file->filename(),
                         'link'     => $file->panelUrl(true),
                         'id'       => $file->id(),
-                        'url'      => $file->url()
+                        'url'      => $file->url(),
+                        'thumb'    => $file->isResizable() ? $file->resize(512)->url() : null
                     ];
                 }
             }
 
             return $files;
 
-        },
-    ],
-    'methods' => [
-        'toString' => function ($value = null) {
-            if (is_array($value) === true) {
-                return Yaml::encode(array_column($value, 'id'));
-            }
-
-            return '';
         }
+    ],
+    'toString' => function ($value = null) {
+        if (is_array($value) === true) {
+            return Yaml::encode(array_column($value, 'id'));
+        }
+
+        return '';
+    },
+    'validations' => [
+        'max',
+        'min'
     ]
 ];

@@ -10,6 +10,7 @@ use Kirby\Data\Data;
 use Kirby\Email\PHPMailer as Emailer;
 use Kirby\Exception\InvalidArgumentException;
 use Kirby\Exception\LogicException;
+use Kirby\Exception\NotFoundException;
 use Kirby\Form\Field;
 use Kirby\Http\Router;
 use Kirby\Http\Request;
@@ -44,9 +45,10 @@ class App
     protected static $version;
 
     public $data = [];
-    public $language;
 
     protected $collections;
+    protected $defaultLanguage;
+    protected $language;
     protected $languages;
     protected $multilang;
     protected $options;
@@ -307,6 +309,16 @@ class App
     }
 
     /**
+     * Returns the default language object
+     *
+     * @return Language|null
+     */
+    public function defaultLanguage(): ?Language
+    {
+        return $this->defaultLanguage = $this->defaultLanguage ?? $this->languages()->default();
+    }
+
+    /**
      * Destroy the instance singleton and
      * purge other static props
      */
@@ -429,6 +441,20 @@ class App
     }
 
     /**
+     * Returns the current language code
+     *
+     * @return string|null
+     */
+    public function languageCode(): ?string
+    {
+        if ($language = $this->language()) {
+            return $language->code();
+        }
+
+        return null;
+    }
+
+    /**
      * Returns all available site languages
      *
      * @return Languages
@@ -523,24 +549,6 @@ class App
     }
 
     /**
-     * Creates a Pagination object
-     *
-     * @return Pagination
-     */
-    public function pagination(array $options = []): Pagination
-    {
-        $config  = $this->options['pagination'] ?? [];
-        $request = $this->request();
-
-        $options['limit']    = $options['limit']    ?? $config['limit'] ?? 20;
-        $options['variable'] = $options['variable'] ?? $config['variable'] ?? 'page';
-        $options['page']     = $options['page']     ?? $request->url()->params()->get($options['variable'], 1);
-        $options['url']      = $options['url']      ?? $request->url();
-
-        return new Pagination($options);
-    }
-
-    /**
      * Returns the request path
      *
      * @return void
@@ -591,8 +599,8 @@ class App
      */
     public function resolve(string $path = null, Language $language = null)
     {
-        // set the current language
-        $this->language = $language;
+        // set the current locale
+        $this->localize($language);
 
         // the site is needed a couple times here
         $site = $this->site();
@@ -613,7 +621,9 @@ class App
 
         // try to resolve content representations if the path has an extension
         $extension = F::extension($path);
-        $path      = rtrim($path, '.' . $extension);
+
+        // remove the extension from the path
+        $path = Str::rtrim($path, '.' . $extension);
 
         // stop when there's no extension
         if (empty($extension) === true) {
@@ -622,7 +632,11 @@ class App
 
         // try to find the page for the representation
         if ($page = $site->find($path)) {
-            return Response::for($page, [], $extension);
+            try {
+                return Response::for($page, [], $extension);
+            } catch (NotFoundException $e) {
+                return null;
+            }
         }
 
         $id       = dirname($path);

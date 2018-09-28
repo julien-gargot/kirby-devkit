@@ -14,18 +14,21 @@ return [
             return $query;
         },
     ],
-    'computed' => [
-        'options' => function () {
-            return $this->getOptions();
-        }
-    ],
     'methods' => [
         'getOptions' => function () {
             return Options::factory(
-                $this->props['options'],
+                $this->options(),
                 $this->props,
-                $this->data['model'] ?? null
+                $this->model()
             );
-        }
+        },
+        'sanitizeOption' => function ($option) {
+            $allowed = array_column($this->options(), 'value');
+            return in_array($option, $allowed, true) === true ? $option : null;
+        },
+        'sanitizeOptions' => function ($options) {
+            $allowed = array_column($this->options(), 'value');
+            return array_intersect($options, $allowed);
+        },
     ]
 ];

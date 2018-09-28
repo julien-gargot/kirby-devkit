@@ -62,7 +62,7 @@ return function ($kirby) {
             }
         ],
         [
-            'pattern' => 'media/plugins/(:any)/(:any)/(:all).(css|gif|js|jpg|png|svg|webp)',
+            'pattern' => 'media/plugins/(:any)/(:any)/(:all).(css|gif|js|jpg|png|svg|webp|woff2|woff)',
             'env'     => 'media',
             'action'  => function (string $provider, string $pluginName, string $filename, string $extension) use ($kirby) {
 
@@ -128,6 +128,31 @@ return function ($kirby) {
                 }
             ];
         }
+
+        // fallback route for unprefixed language URLs.
+        $routes[] = [
+            'pattern' => '(:all)',
+            'method'  => 'ALL',
+            'env'     => 'site',
+            'action'  => function (string $path) use ($kirby) {
+
+                if ($page = $kirby->page($path)) {
+
+                    $url = $kirby->request()->url([
+                        'query'    => null,
+                        'params'   => null,
+                        'fragment' => null
+                    ]);
+
+                    if ($url->toString() !== $page->url()) {
+                        go($page->url());
+                    }
+
+                    return $page;
+                }
+
+            }
+        ];
 
         return $routes;
     }

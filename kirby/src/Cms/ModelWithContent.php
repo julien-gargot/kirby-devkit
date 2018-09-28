@@ -92,7 +92,9 @@ abstract class ModelWithContent extends Model
         $errors = [];
 
         foreach ($this->blueprint()->sections() as $section) {
-            $errors = array_merge($errors, $section->errors());
+            if (method_exists($section, 'errors') === true) {
+                $errors = array_merge($errors, $section->errors());
+            }
         }
 
         return $errors;
@@ -180,7 +182,7 @@ abstract class ModelWithContent extends Model
 
         // inject the default translation as fallback
         if ($language->isDefault() === false) {
-            $defaultLanguage    = $this->kirby()->languages()->default();
+            $defaultLanguage    = $this->kirby()->defaultLanguage();
             $defaultTranslation = $this->translations()->find($defaultLanguage->code());
 
             // fill missing content with the default translation

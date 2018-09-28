@@ -15,7 +15,7 @@ return [
         'pattern' => 'site',
         'method'  => 'PATCH',
         'action'  => function () {
-            return $this->site()->update($this->requestBody());
+            return $this->site()->update($this->requestBody(), $this->language(), true);
         }
     ],
     [
@@ -107,7 +107,7 @@ return [
         'pattern' => 'site/files/(:any)',
         'method'  => 'PATCH',
         'action'  => function (string $filename) {
-            return $this->file(null, $filename)->update($this->requestBody());
+            return $this->file(null, $filename)->update($this->requestBody(), $this->language(), true);
         }
     ],
     [
@@ -138,6 +138,20 @@ return [
             if ($section = $this->file(null, $filename)->blueprint()->section($sectionName)) {
                 return $section->toResponse();
             }
+        }
+    ],
+    [
+        'pattern' => 'site/find',
+        'method'  => 'POST',
+        'action'  => function () {
+            $result = $this->site()->find(...$this->requestBody());
+
+            // always wrap single pages in a collection
+            if (is_a($result, 'Kirby\Cms\Page') === true) {
+                return new Pages([$result]);
+            }
+
+            return $result;
         }
     ],
     [

@@ -45,7 +45,10 @@ return [
             return $file->next();
         },
         'nextWithTemplate' => function (File $file) {
-            return $file->nextAll()->template($file->template())->first();
+            $files = $file->templateSiblings()->sortBy('sort', 'asc');
+            $index = $files->indexOf($file);
+
+            return $files->nth($index + 1);
         },
         'options' => function (File $file) {
             return $file->permissions()->toArray();
@@ -54,7 +57,10 @@ return [
             return $file->prev();
         },
         'prevWithTemplate' => function (File $file) {
-            return $file->prevAll()->template($file->template())->last();
+            $files = $file->templateSiblings()->sortBy('sort', 'asc');
+            $index = $files->indexOf($file);
+
+            return $files->nth($index - 1);
         },
         'niceSize' => function (File $file) {
             return $file->niceSize();
@@ -70,6 +76,21 @@ return [
         },
         'size' => function (File $file) {
             return $file->size();
+        },
+        'thumbs' => function ($file) {
+
+            if ($file->isResizable() === false) {
+                return null;
+            }
+
+            return [
+                'tiny'   => $file->resize(128)->url(),
+                'small'  => $file->resize(256)->url(),
+                'medium' => $file->resize(512)->url(),
+                'large'  => $file->resize(768)->url(),
+                'huge'   => $file->resize(1024)->url(),
+            ];
+
         },
         'type' => function (File $file) {
             return $file->type();

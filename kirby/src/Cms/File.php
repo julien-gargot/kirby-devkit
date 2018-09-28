@@ -5,6 +5,7 @@ namespace Kirby\Cms;
 use Kirby\Data\Data;
 use Kirby\Exception\Exception;
 use Kirby\Image\Image;
+use Kirby\Toolkit\F;
 use Kirby\Toolkit\Str;
 use Throwable;
 
@@ -217,7 +218,12 @@ class File extends ModelWithContent
      */
     public function contentFile(string $languageCode = null): string
     {
-        if ($languageCode !== null) {
+        // get the current language code if no code is passed
+        if ($languageCode === null) {
+            $languageCode = $this->kirby()->languageCode();
+        }
+
+        if ($languageCode !== null && $languageCode !== '') {
             return $this->root() . '.' . $languageCode . '.' . $this->kirby()->contentExtension();
         }
 
@@ -333,6 +339,24 @@ class File extends ModelWithContent
     }
 
     /**
+     * Checks if the file is a resizable image
+     *
+     * @return boolean
+     */
+    public function isResizable(): bool
+    {
+        $resizable = [
+            'jpg',
+            'jpeg',
+            'gif',
+            'png',
+            'webp'
+        ];
+
+        return in_array($this->extension(), $resizable) === true;
+    }
+
+    /**
      * Returns the absolute path to the file in the public media folder
      *
      * @return string
@@ -374,6 +398,18 @@ class File extends ModelWithContent
     public function model()
     {
         return $this->parent();
+    }
+
+    /**
+     * Get the file's last modification time.
+     *
+     * @param  string $format
+     * @param  string|null $handler date or strftime
+     * @return mixed
+     */
+    public function modified(string $format = null, string $handler = null)
+    {
+        return F::modified($this->root(), $format, $handler ?? $this->kirby()->option('date.handler', 'date'));
     }
 
     /**
@@ -629,6 +665,17 @@ class File extends ModelWithContent
     public function template(): ?string
     {
         return $this->template = $this->template ?? $this->content()->get('template')->value();
+    }
+
+    /**
+     * Returns siblings with the same template
+     *
+     * @param bool $self
+     * @return self
+     */
+    public function templateSiblings(bool $self = true)
+    {
+        return $this->siblings($self)->filterBy('template', $this->template());
     }
 
     /**

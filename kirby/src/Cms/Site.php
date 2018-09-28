@@ -200,6 +200,25 @@ class Site extends ModelWithContent
     }
 
     /**
+     * Builds a breadcrumb collection
+     *
+     * @return Pages
+     */
+    public function breadcrumb()
+    {
+        // get all parents and flip the order
+        $crumb = $this->page()->parents()->flip();
+
+        // add the home page
+        $crumb->prepend($this->homePage()->id(), $this->homePage());
+
+        // add the active page
+        $crumb->append($this->page()->id(), $this->page());
+
+        return $crumb;
+    }
+
+    /**
      * Returns the absolute path to the site's
      * content text file
      *
@@ -208,7 +227,12 @@ class Site extends ModelWithContent
      */
     public function contentFile(string $languageCode = null): string
     {
-        if ($languageCode !== null) {
+        // get the current language code if no code is passed
+        if ($languageCode === null) {
+            $languageCode = $this->kirby()->languageCode();
+        }
+
+        if ($languageCode !== null && $languageCode !== '') {
             return $this->root() . '/site.' . $languageCode . '.' . $this->kirby()->contentExtension();
         }
 
@@ -318,6 +342,19 @@ class Site extends ModelWithContent
     public function mediaUrl(): string
     {
         return $this->kirby()->url('media') . '/site';
+    }
+
+    /**
+     * Gets the last modification date of all pages
+     * in the content folder.
+     *
+     * @param string|null $format
+     * @param string|null $handler
+     * @return mixed
+     */
+    public function modified(string $format = null, string $handler = null)
+    {
+        return Dir::modified($this->root(), $format, $handler ?? $this->kirby()->option('date.handler', 'date'));
     }
 
     /**
@@ -618,5 +655,17 @@ class Site extends ModelWithContent
 
         // return the page
         return $page;
+    }
+
+    /**
+     * Checks if any content of the site has been
+     * modified after the given unix timestamp
+     * This is mainly used to auto-update the cache
+     *
+     * @return boolean
+     */
+    public function wasModifiedAfter($time): boolean
+    {
+        return Dir::wasModifiedAfter($this->root(), $time);
     }
 }

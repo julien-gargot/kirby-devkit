@@ -45,6 +45,69 @@ class Pagination
     }
 
     /**
+     * Creates a pagination instance for the given
+     * collection with a flexible argument api
+     *
+     * @param Collection $collection
+     * @param ...mixed $arguments
+     * @return self
+     */
+    public static function for(Collection $collection, ...$arguments)
+    {
+        $a = $arguments[0] ?? null;
+        $b = $arguments[1] ?? null;
+
+        $params = [];
+
+        if (is_array($a) === true) {
+
+            /**
+             * First argument is an option array
+             *
+             * $collection->paginate([...])
+             */
+            $params = $a;
+        } elseif (is_int($a) === true && $b === null) {
+
+            /**
+             * First argument is the limit
+             *
+             * $collection->paginate(10)
+             */
+            $params['limit'] = $a;
+        } elseif (is_int($a) === true && is_int($b) === true) {
+
+            /**
+             * First argument is the limit,
+             * second argument is the page
+             *
+             * $collection->paginate(10, 2)
+             */
+            $params['limit'] = $a;
+            $params['page']  = $b;
+        } elseif (is_int($a) === true && is_array($b) === true) {
+
+            /**
+             * First argument is the limit,
+             * second argument are options
+             *
+             * $collection->paginate(10, [...])
+             */
+            $params = $b;
+            $params['limit'] = $a;
+        }
+
+        // add the total count from the collection
+        $params['total'] = $collection->count();
+
+        // remove null values to make later merges work properly
+        $params = array_filter($params);
+
+        // create the pagination instance
+        return new static($params);
+    }
+
+    /**
      * Getter and setter for the current page
      *
      * @param  int|null $page
@@ -53,6 +116,14 @@ class Pagination
     public function page(int $page = null)
     {
         if ($page === null) {
+            if ($this->page > $this->pages()) {
+                $this->page = $this->lastPage();
+            }
+
+            if ($this->page < 1) {
+                $this->page = $this->firstPage();
+            }
+
             return $this->page;
         }
 
@@ -107,7 +178,13 @@ class Pagination
      */
     public function start(): int
     {
-        return ($this->page() - 1) * $this->limit() + 1;
+        $index = $this->page() - 1;
+
+        if ($index < 0) {
+            $index = 0;
+        }
+
+        return $index * $this->limit() + 1;
     }
 
     /**
@@ -136,6 +213,7 @@ class Pagination
         if ($this->total() === 0) {
             return 0;
         }
+
         return ceil($this->total() / $this->limit());
     }
 

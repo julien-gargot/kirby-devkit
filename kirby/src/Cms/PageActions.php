@@ -314,7 +314,7 @@ trait PageActions
 
             // always create pages in the default language
             if ($page->kirby()->multilang() === true) {
-                $languageCode = $page->kirby()->languages()->default()->code();
+                $languageCode = $page->kirby()->defaultLanguage()->code();
             } else {
                 $languageCode = null;
             }
@@ -557,8 +557,10 @@ trait PageActions
         $data      = [];
         $old       = Blueprint::factory($old, 'pages/default', $this);
         $new       = Blueprint::factory($new, 'pages/default', $this);
-        $oldFields = $old->fields();
-        $newFields = $new->fields();
+        $oldForm   = new Form(['fields' => $old->fields(), 'model' => $this]);
+        $newForm   = new Form(['fields' => $new->fields(), 'model' => $this]);
+        $oldFields = $oldForm->fields();
+        $newFields = $newForm->fields();
 
         // Tracking changes
         $added    = [];
@@ -583,7 +585,7 @@ trait PageActions
                 // Different field type, add with empty value
                 } else {
                     $data[$name]     = null;
-                    $replaced[$name] = $oldFields->get($name)->label();
+                    $replaced[$name] = $oldFields->get($name)->label() ?? $name;
                 }
 
                 // Field does not exist in old template,
@@ -591,7 +593,7 @@ trait PageActions
             } else {
                 $preserved    = $content->get($name);
                 $data[$name]  = $preserved ? $preserved->value(): null;
-                $added[$name] = $newField->label();
+                $added[$name] = $newField->label() ?? $name;
             }
         }
 
@@ -628,7 +630,7 @@ trait PageActions
 
         // if num is created from page content, update num on content update
         if ($page->isListed() === true && in_array($page->blueprint()->num(), ['zero', 'default']) === false) {
-            $page = $page->changeNum();
+            $page = $page->changeNum(0);
         }
 
         return $page;
