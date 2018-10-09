@@ -1,6 +1,8 @@
 .DS_Store
+.directory
 
 /media
+/node_modules
 /site/accounts
 /site/cache
 /site/sessions
