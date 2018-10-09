@@ -1,0 +1,20 @@
+/*!
+ * BEM+SMACSS configuration.
+ * @author: Julien Gargot
+ * @source: Inspired by http://sassbreak.com/writing-modular-css-with-sass/
+ */
+
+// V A R I A B L E S
+@import "variables/index";
+
+// B A S E   S T Y L E S
+@import "base/index";
+
+// U T I L I T I E S
+@import "utilities/index";
+
+// L A Y O U T   S T Y L E S
+@import "layout/index";
+
+// M O D U L E S
+@import "modules/index";

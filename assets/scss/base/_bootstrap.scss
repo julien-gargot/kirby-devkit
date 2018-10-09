@@ -1,0 +1,30 @@
+// Bootstrap Reboot and Grid only
+//
+// Includes only Normalize and our custom Reboot reset.
+// Includes relevant variables and mixins for the flexbox grid
+// system, as well as the generated predefined classes (e.g., `.col-sm-4`).
+
+//
+// Box sizing, responsive, and more
+//
+
+// @import "../../../node_modules/bootstrap/scss/functions"; // imported in variables/
+// @import "../../../node_modules/bootstrap/scss/variables"; // not needed
+@import "../../../node_modules/bootstrap/scss/mixins";
+
+//
+// Reboot
+//
+
+@import "../../../node_modules/bootstrap/scss/reboot";
+
+//
+// Grid mixins
+//
+
+@import "../../../node_modules/bootstrap/scss/mixins/breakpoints";
+@import "../../../node_modules/bootstrap/scss/mixins/grid-framework";
+@import "../../../node_modules/bootstrap/scss/mixins/grid";
+
+@import "../../../node_modules/bootstrap/scss/grid";
+@import "../../../node_modules/bootstrap/scss/utilities/flex";
