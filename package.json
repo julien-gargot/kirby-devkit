@@ -1,0 +1,32 @@
+{
+  "name": "kirby-devkit",
+  "version": "3.0.0-beta-6",
+  "description": "Kirby base installation for developers.",
+  "authors": [
+    "Julien Gargot",
+    "Louis Eveillard"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julien-gargot/kirby-devkit.git"
+  },
+  "license": "CC-BY-SA-4.0",
+  "devDependencies": {
+    "browser-sync": "*",
+    "font-awesome": "*",
+    "gulp-autoprefixer": "*",
+    "gulp": "*",
+    "gulp-concat": "*",
+    "gulp-cssnano": "*",
+    "gulp-concat-css": "*",
+    "gulp-jshint": "*",
+    "gulp-rename": "*",
+    "gulp-plumber": "*",
+    "gulp-sass": "*",
+    "gulp-uglify": "*",
+    "jquery": "*",
+    "jshint": "*",
+    "popper.js": "*",
+    "bootstrap": "*"
+  }
+}
