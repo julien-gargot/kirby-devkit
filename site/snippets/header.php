@@ -12,7 +12,7 @@
 
   <?php
     if ( option('environment') == 'local' ) :
-      foreach ( option('styles', array()) as $style):
+      foreach ( option('julien-gargot.assets.styles', array()) as $style):
         echo css($style);
       endforeach;
     else:

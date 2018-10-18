@@ -10,7 +10,7 @@
   <!-- scripts -->
   <?php
     if ( option('environment') == 'local' ) :
-      foreach ( option('scripts', array()) as $style):
+      foreach ( option('julien-gargot.assets.scripts', array()) as $style):
         echo js($style);
       endforeach;
     else:

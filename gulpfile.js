@@ -143,12 +143,20 @@ gulp.task('export-vars-to-kirby', function() {
   var scripts = vars.pluginScripts.concat( vars.userScripts );
 
   // Create a Kirby plugin that defines asset vars
+  var destination = 'site/plugins/assets';
   var assets  = "<?php\n";
       assets += "# Automatically generated file by Gulp for kirby-devkit; DO NOT EDIT.\n";
-      assets += "c::set('styles', " + JSON.stringify(styles) + ");\n";
-      assets += "c::set('scripts', " + JSON.stringify(scripts) + ");\n";
+      assets += "Kirby::plugin('julien-gargot/assets', [\n";
+      assets += "  'options' => [\n";
+      assets += "    'styles' => " + JSON.stringify(styles) + ",\n";
+      assets += "    'scripts' => " + JSON.stringify(scripts) + ",\n";
+      assets += "  ]\n";
+      assets += "]);";
 
-  gp_fs.writeFileSync('site/plugins/assets.php', assets );
+  if(!gp_fs.existsSync(destination)) {
+    gp_fs.mkdirSync(destination);
+  }
+  gp_fs.writeFileSync(destination + '/index.php', assets );
 
 });
 
