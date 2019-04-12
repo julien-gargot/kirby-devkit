@@ -10,7 +10,7 @@ You will need Npm and GIT (for the Kirby submodules) to use this project.
 
 1. clone this repo :
   ```
-  git clone -b v3 https://gitlab.com/juliengargot/kirby-devkit.git path/to/your-project
+  git clone -b v3 https://github.com/julien-gargot/kirby-devkit.git path/to/your-project
   cd path/to/your-project
   git submodule update --init
   cd kirby
