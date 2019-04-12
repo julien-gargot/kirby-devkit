@@ -12,21 +12,21 @@
   },
   "license": "CC-BY-SA-4.0",
   "devDependencies": {
+    "bootstrap": "*",
     "browser-sync": "*",
     "font-awesome": "*",
-    "gulp-autoprefixer": "*",
     "gulp": "*",
+    "gulp-autoprefixer": "*",
     "gulp-concat": "*",
-    "gulp-cssnano": "*",
     "gulp-concat-css": "*",
+    "gulp-cssnano": "*",
     "gulp-jshint": "*",
-    "gulp-rename": "*",
     "gulp-plumber": "*",
+    "gulp-rename": "*",
     "gulp-sass": "*",
     "gulp-uglify": "*",
     "jquery": "*",
     "jshint": "*",
-    "popper.js": "*",
-    "bootstrap": "*"
+    "popper.js": "*""
   }
 }

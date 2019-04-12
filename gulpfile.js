@@ -22,19 +22,38 @@ make Gulp work.
 - gulp `default` is `prod`.
 
 - gulp `prod` runs everything to create all files needed in production.
-  The task performs the following instructions: “export-vars-to-kirby”, “lint”,
-  “sass”, “css” and “scripts”.
+  The task performs the following instructions: “_export-vars-to-kirby”, “_lint”,
+  “_sass”, “_css” and “_scripts”.
 
 - gulp `dev` runs only the essentials to create all files needed for
   development. The task performs the following instructions:
-  “export-vars-to-kirby”, “lint” and “sass”.
+  “_export-vars-to-kirby”, “_lint” and “_sass”.
 
 - gulp `dev-watch` task execute “export-vars-to-kirby”,
-  run “lint”, “script-plugins” and “sass” watching `assets/manifest.js`,
-  run “lint” watching `userScripts` and
-  run “sass” watching `userStyles`.
+  run “_lint”, “_scripts” and “_sass” watching `assets/manifest.js`,
+  run “_lint” watching `userScripts` and
+  run “_sass” watching `userStyles`.
 
 */
+
+
+
+// Helpers function
+Array.prototype.unique = function() {
+  return this.reduce(function(accum, current) {
+    if (accum.indexOf(current) < 0) {
+      accum.push(current);
+    }
+    return accum;
+  }, []);
+}
+
+
+
+// Global variables
+var vars = require("./assets/manifest.js");
+
+
 
 // Include gulp
 var gulp = require('gulp');
@@ -42,7 +61,6 @@ var gulp = require('gulp');
 
 
 // Include Our Plugins
-var vars = require("./assets/manifest.js");
 var gp_autoprefixer = require('gulp-autoprefixer');
 var gp_browserSync  = require('browser-sync').create();
 var gp_concat       = require('gulp-concat');
@@ -58,7 +76,7 @@ var gp_uglify       = require('gulp-uglify');
 
 
 // Compile our SCSS
-gulp.task('sass', function() {
+gulp.task('_sass', function() {
   return gulp.src( vars.userStyles )
     .pipe(gp_plumber({
       errorHandler: function (err) {
@@ -78,7 +96,7 @@ gulp.task('sass', function() {
 
 
 // Prefix & Minify CSS
-gulp.task('css', ['sass'], function (done) {
+gulp.task('_css', gulp.series('_sass'), function (done) {
 
   // get CSS (ordered)
   var styles = vars.userStyles.map(function(path){
@@ -102,7 +120,7 @@ gulp.task('css', ['sass'], function (done) {
 
 
 // Lint Task
-gulp.task('lint', function() {
+gulp.task('_lint', function() {
   return gulp.src( vars.userScripts )
     .pipe(gp_jshint())
     .pipe(gp_jshint.reporter('default'));
@@ -111,7 +129,7 @@ gulp.task('lint', function() {
 
 
 // Concatenate JS plugins with user scripts and minify them.
-gulp.task('scripts', function (done) {
+gulp.task('_scripts', function (done) {
   var scripts = vars.pluginScripts.concat( vars.userScripts );
   return gulp.src( scripts )
     .pipe(gp_concat('all.min.js'))
@@ -128,8 +146,7 @@ gulp.task('scripts', function (done) {
 
 // Export `manifest.js` vars to PHP through a kirby plugin.
 // cf. `snippets/header` and `snippets/footer`
-gulp.task('export-vars-to-kirby', function() {
-
+gulp.task('_export-vars-to-kirby', function(done){
   // get CSS (ordered)
   var styles = vars.userStyles.map(function(path){
     return path.replace(
@@ -157,59 +174,40 @@ gulp.task('export-vars-to-kirby', function() {
     gp_fs.mkdirSync(destination);
   }
   gp_fs.writeFileSync(destination + '/index.php', assets );
-
-});
-
-
-
-// Live reload sync on every screen connect to localhost
-gulp.task('init-live-reload', function() {
-  gp_browserSync.init({
-    proxy: vars.localDevUrl,
-    notify: false,
-    snippetOptions: {
-      ignorePaths: ['panel/**', 'site/accounts/**']
-    },
-  });
+  done();
 });
 
 
 
 // Watch Files For Changes
-gulp.task('dev-watch', ['export-vars-to-kirby'], function() {
-  gulp.watch( './assets/manifest.js', ['export-vars-to-kirby', 'lint', 'sass']);
-  gulp.watch( vars.userScripts, ['lint']);
-  // watch style folders instead of files
-  var styles = vars.userStyles.map(function(path){
-    var response = path.replace(
+gulp.task('_watch', function() {
+  var scripts_folders = vars.userScripts.map(function(path){
+    return path.replace(
       /^((.+)\/)?((.+?)(\.[^.]*$|$))$/g,
       "$1**"
     );
-    return response;
   }).unique();
-  gulp.watch( styles, ['sass']);
+  var styles_folders = vars.userStyles.map(function(path){
+    return path.replace(
+      /^((.+)\/)?((.+?)(\.[^.]*$|$))$/g,
+      "$1**"
+    );
+  }).unique();
+  gulp.watch( './assets/manifest.js', gulp.series('_export-vars-to-kirby', '_lint', '_sass'));
+  gulp.watch( scripts_folders, gulp.series('_lint'));
+  gulp.watch( styles_folders, gulp.series('_sass'));
 });
 
-// Watch Files For Changes with live reload sync on every screen connect to localhost.
-gulp.task('dev-watch-sync', ['init-live-reload', 'dev-watch']);
+
+
+// Watch Files For Changes
+gulp.task('dev-watch', gulp.series('_export-vars-to-kirby', '_watch'));
 
 // Dev Task
-gulp.task('dev', ['export-vars-to-kirby', 'lint', 'sass']);
+gulp.task('dev', gulp.series('_export-vars-to-kirby', '_lint', '_sass'));
 
 // Run every tasks in order to build files for production
-gulp.task('prod', ['export-vars-to-kirby', 'lint', 'sass', 'css', 'scripts']);
+gulp.task('prod', gulp.series('_export-vars-to-kirby', '_lint', '_sass', '_css', '_scripts'));
 
 // Default Task
-gulp.task('default', ['prod']);
-
-
-
-// Helpers function
-Array.prototype.unique = function() {
-  return this.reduce(function(accum, current) {
-    if (accum.indexOf(current) < 0) {
-      accum.push(current);
-    }
-    return accum;
-  }, []);
-}
+gulp.task('default', gulp.series('prod'));
