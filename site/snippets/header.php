@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<?php echo $site->language() ?>">
+<html lang="<?php echo $kirby->language() ?>">
 <head>
 
   <meta charset="utf-8" />
@@ -48,6 +48,6 @@
 
 </head>
 <body
-   data-login="<?php e($site->user(),'true', 'false') ?>"
+   data-login="<?php e($kirby->user(),'true', 'false') ?>"
    data-template="<?php echo $page->template() ?>"
    data-intended-template="<?php echo $page->intendedTemplate() ?>">
