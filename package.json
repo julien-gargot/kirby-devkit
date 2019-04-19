@@ -27,6 +27,6 @@
     "gulp-uglify": "*",
     "jquery": "*",
     "jshint": "*",
-    "popper.js": "*""
+    "popper.js": "*"
   }
 }
