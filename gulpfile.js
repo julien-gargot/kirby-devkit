@@ -96,7 +96,7 @@ gulp.task('_sass', function() {
 
 
 // Prefix & Minify CSS
-gulp.task('_css', gulp.series('_sass'), function (done) {
+gulp.task('_css', function (done) {
 
   // get CSS (ordered)
   var styles = vars.userStyles.map(function(path){
