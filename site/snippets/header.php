@@ -13,7 +13,7 @@
   <?php
     if ( option('environment') == 'local' ) :
       foreach ( option('julien-gargot.assets.styles', array()) as $style):
-        echo css($style);
+        echo css($style.'?version='.md5(uniqid(rand(), true)));
       endforeach;
     else:
       echo css('assets/production/all.min.css');
