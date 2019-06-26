@@ -2,6 +2,7 @@
 .directory
 package-lock.json
 
+/content
 /media
 /node_modules
 /site/accounts
