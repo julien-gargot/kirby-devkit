@@ -10,8 +10,7 @@ User settings for GUlp
  * to define their loading order.
  */
 module.exports.pluginScripts = [
-  'node_modules/jquery/dist/jquery.js',
-  'node_modules/popper.js/dist/umd/popper.js',
+  'node_modules/@popperjs/core/dist/umd/popper.js',
   'node_modules/bootstrap/dist/js/bootstrap.js'
 ];
 
@@ -19,7 +18,6 @@ module.exports.pluginScripts = [
  * to define their loading order.
  */
 module.exports.pluginStyles = [
-  'node_modules/font-awesome/css/font-awesome.css'
 ];
 
 /* List all your JavaScript file in `userScripts` to define
