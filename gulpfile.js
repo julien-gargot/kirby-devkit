@@ -70,7 +70,7 @@ var gp_jshint       = require('gulp-jshint');
 var gp_nano         = require('gulp-cssnano');
 var gp_plumber      = require('gulp-plumber');
 var gp_rename       = require('gulp-rename');
-var gp_sass         = require('gulp-sass');
+var gp_sass         = require('gulp-sass')(require('sass'));
 var gp_uglify       = require('gulp-uglify');
 
 
@@ -86,7 +86,6 @@ gulp.task('_sass', function() {
     }))
     .pipe(gp_sass())
     .pipe(gp_autoprefixer({
-    	browsers: ['last 3 versions'],
     	cascade: false
     }))
     .pipe(gulp.dest('assets/css'))
