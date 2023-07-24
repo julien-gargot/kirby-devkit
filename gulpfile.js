@@ -70,7 +70,7 @@ var gp_jshint       = require('gulp-jshint');
 var gp_nano         = require('gulp-cssnano');
 var gp_plumber      = require('gulp-plumber');
 var gp_rename       = require('gulp-rename');
-var gp_sass         = require('gulp-sass');
+var gp_sass         = require('gulp-sass')(require('sass'));
 var gp_uglify       = require('gulp-uglify');
 
 
@@ -86,7 +86,6 @@ gulp.task('_sass', function() {
     }))
     .pipe(gp_sass())
     .pipe(gp_autoprefixer({
-    	browsers: ['last 3 versions'],
     	cascade: false
     }))
     .pipe(gulp.dest('assets/css'))
@@ -163,7 +162,7 @@ gulp.task('_export-vars-to-kirby', function(done){
   var destination = 'site/plugins/assets';
   var assets  = "<?php\n";
       assets += "# Automatically generated file by Gulp for kirby-devkit; DO NOT EDIT.\n";
-      assets += "Kirby::plugin('julien-gargot/assets', [\n";
+      assets += "Kirby::plugin('kirby-devkit/assets', [\n";
       assets += "  'options' => [\n";
       assets += "    'styles' => " + JSON.stringify(styles) + ",\n";
       assets += "    'scripts' => " + JSON.stringify(scripts) + ",\n";
