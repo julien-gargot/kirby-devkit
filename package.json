@@ -1,10 +1,9 @@
 {
   "name": "kirby-devkit",
-  "version": "3.3.1",
+  "version": "3.9.5",
   "description": "Kirby base installation for developers.",
   "authors": [
-    "Julien Gargot",
-    "Louis Eveillard"
+    "Julien Gargot"
   ],
   "repository": {
     "type": "git",
@@ -12,21 +11,24 @@
   },
   "license": "CC-BY-SA-4.0",
   "devDependencies": {
-    "bootstrap": "*",
-    "browser-sync": "*",
-    "font-awesome": "*",
-    "gulp": "*",
-    "gulp-autoprefixer": "*",
-    "gulp-concat": "*",
-    "gulp-concat-css": "*",
-    "gulp-cssnano": "*",
-    "gulp-jshint": "*",
-    "gulp-plumber": "*",
-    "gulp-rename": "*",
-    "gulp-sass": "*",
-    "gulp-uglify": "*",
-    "jquery": "*",
-    "jshint": "*",
-    "popper.js": "*"
-  }
+    "browser-sync": "^2.29.3",
+    "gulp": "^4.0.2",
+    "gulp-autoprefixer": "^8.0.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-concat-css": "^3.1.0",
+    "gulp-cssnano": "^2.1.3",
+    "gulp-jshint": "^2.1.0",
+    "gulp-plumber": "^1.2.1",
+    "gulp-rename": "^2.0.0",
+    "gulp-sass": "^5.1.0",
+    "gulp-uglify": "^3.0.2",
+    "sass": "^1.64.1"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.0"
+  },
+  "browserslist": [
+    "defaults"
+  ]
 }
