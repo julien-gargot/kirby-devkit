@@ -1,6 +1,5 @@
 .DS_Store
 .directory
-package-lock.json
 
 /content
 /media
