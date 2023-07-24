@@ -1,0 +1,16 @@
+{
+    "name": "kirby-devkit/assets",
+    "description": "Automatically generated file by Gulp for kirby-devkit",
+    "type": "kirby-plugin",
+    "license": "MIT",
+    "version": "1.0.0",
+    "require": {
+        "getkirby/cms": "3"
+    },
+    "authors": [
+        {
+            "name": "Julien Gargot",
+            "email": "julien@g-u-i.net"
+        }
+    ]
+}
