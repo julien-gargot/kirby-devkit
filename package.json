@@ -1,10 +1,9 @@
 {
   "name": "kirby-devkit",
-  "version": "3.3.1",
+  "version": "3.9.5",
   "description": "Kirby base installation for developers.",
   "authors": [
-    "Julien Gargot",
-    "Louis Eveillard"
+    "Julien Gargot"
   ],
   "repository": {
     "type": "git",
