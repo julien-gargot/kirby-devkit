@@ -13,13 +13,11 @@ You will need Npm and GIT (for the Kirby submodules) to use this project.
   git clone -b v3 https://github.com/julien-gargot/kirby-devkit.git path/to/your-project
   cd path/to/your-project
   git submodule update --init
-  cd kirby
-  composer update
   ```
 
 2. install Npm :
   ```
-  npm install
+  npm ci
   ```
 
 3. to compile all files, for **development** and **production** :
@@ -32,10 +30,11 @@ You will need Npm and GIT (for the Kirby submodules) to use this project.
   gulp dev-watch
   ```
 
-  Same as `gulp dev-watch` with live reload.
+  ~Same as `gulp dev-watch` with live reload.~ _Not tested after gulp update (7/24/23)_
   ```
-  gulp dev-watch-sync
+  #gulp dev-watch-sync
   ```
+~~~
 
 ## Configure with your server/site settings
 
