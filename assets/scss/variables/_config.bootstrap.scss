@@ -1,96 +1,21 @@
-// Variables
-//
-// Variables should follow the `$component-state-property-size` formula for
-// consistent naming. Ex: $nav-link-disabled-color and $modal-content-box-shadow-xs.
+$primary:       #00f;
+$success:       #0f0;
+$danger:        #f00;
 
-// Color system
+$enable-rounded:              true;
+$enable-transitions:          true;
+$enable-reduced-motion:       true;
+$enable-smooth-scroll:        true;
+$enable-grid-classes:         true;
+$enable-container-classes:    true;
+$enable-cssgrid:              false;
+$enable-button-pointers:      true;
+$enable-important-utilities:  true;
+$enable-dark-mode:            false;
 
-// scss-docs-start gray-color-variables
-$white:    #fff !default;
-$black:    #000 !default;
-// scss-docs-end gray-color-variables
+$prefix:                      gui-;
 
-// fusv-disable
-// scss-docs-start gray-colors-map
-$grays: (
-) !default;
-// scss-docs-end gray-colors-map
-// fusv-enable
-
-// scss-docs-start colors-map
-$colors: (
-) !default;
-// scss-docs-end colors-map
-
-// The contrast ratio to reach against white, to determine if color changes from "light" to "dark". Acceptable values for WCAG 2.0 are 3, 4.5 and 7.
-// See https://www.w3.org/TR/WCAG20/#visual-audio-contrast-contrast
-
-// scss-docs-start theme-color-variables
-$primary:       #00f !default;
-$success:       #0f0 !default;
-$danger:        #f00 !default;
-// scss-docs-end theme-color-variables
-
-// scss-docs-start theme-colors-map
-$theme-colors: (
-) !default;
-// scss-docs-end theme-colors-map
-
-// scss-docs-start theme-colors-rgb
-$theme-colors-rgb: map-loop($theme-colors, to-rgb, "$value") !default;
-// scss-docs-end theme-colors-rgb
-
-// scss-docs-start theme-text-map
-$theme-colors-text: (
-) !default;
-// scss-docs-end theme-text-map
-
-// scss-docs-start theme-bg-subtle-map
-$theme-colors-bg-subtle: (
-) !default;
-// scss-docs-end theme-bg-subtle-map
-
-// scss-docs-start theme-border-subtle-map
-$theme-colors-border-subtle: (
-) !default;
-// scss-docs-end theme-border-subtle-map
-
-// Options
-//
-// Quickly modify global styling by enabling or disabling optional features.
-
-$enable-rounded:              true !default;
-$enable-transitions:          true !default;
-$enable-reduced-motion:       true !default;
-$enable-smooth-scroll:        true !default;
-$enable-grid-classes:         true !default;
-$enable-container-classes:    true !default;
-$enable-cssgrid:              false !default;
-$enable-button-pointers:      true !default;
-$enable-important-utilities:  true !default;
-
-$enable-dark-mode:            false !default;
-
-// Prefix for :root CSS variables
-
-$prefix:                      gui- !default;
-
-// Gradient
-//
-// The gradient which is added to components if `$enable-gradients` is `true`
-// This gradient is also added to elements with `.bg-gradient`
-// scss-docs-start variable-gradient
-$gradient: linear-gradient(180deg, rgba($white, .15), rgba($white, 0)) !default;
-// scss-docs-end variable-gradient
-
-// Spacing
-//
-// Control the default styling of most Bootstrap elements by modifying these
-// variables. Mostly focused on spacing.
-// You can add more entries to the $spacers map, should you need more variation.
-
-// scss-docs-start spacer-variables-maps
-$spacer: 1rem !default;
+$spacer: 1rem;
 $spacers: (
   0: 0,
   1: $spacer * .25,
@@ -98,60 +23,8 @@ $spacers: (
   3: $spacer,
   4: $spacer * 1.5,
   5: $spacer * 3,
-) !default;
-// scss-docs-end spacer-variables-maps
+);
 
-// Body
-//
-// Settings for the `<body>` element.
-
-$body-text-align:           null !default;
-$body-color:                #1a1a1a !default;
-$body-bg:                   #fff !default;
-
-$body-secondary-color:      rgba($body-color, .75) !default;
-$body-secondary-bg:         #e9ecef !default;
-
-$body-tertiary-color:       rgba($body-color, .5) !default;
-$body-tertiary-bg:          #f8f9fa !default;
-
-$body-emphasis-color:       $black !default;
-
-// Links
-//
-// Style anchor elements.
-
-$link-color:                              $primary !default;
-$link-decoration:                         underline !default;
-$link-shade-percentage:                   20% !default;
-$link-hover-color:                        shift-color($link-color, $link-shade-percentage) !default;
-$link-hover-decoration:                   null !default;
-
-$stretched-link-pseudo-element:           after !default;
-$stretched-link-z-index:                  1 !default;
-
-// Icon links
-// scss-docs-start icon-link-variables
-$icon-link-gap:               .375rem !default;
-$icon-link-underline-offset:  .25em !default;
-$icon-link-icon-size:         1em !default;
-$icon-link-icon-transition:   .2s ease-in-out transform !default;
-$icon-link-icon-transform:    translate3d(.25em, 0, 0) !default;
-// scss-docs-end icon-link-variables
-
-// Paragraphs
-//
-// Style p element.
-
-$paragraph-margin-bottom:   1rem !default;
-
-
-// Grid breakpoints
-//
-// Define the minimum dimensions at which your layout will change,
-// adapting to different screen sizes, for use in media queries.
-
-// scss-docs-start grid-breakpoints
 $grid-breakpoints: (
   xs: 0,
   sm: 576px,
@@ -159,89 +32,20 @@ $grid-breakpoints: (
   lg: 992px,
   xl: 1200px,
   xxl: 1400px
-) !default;
-// scss-docs-end grid-breakpoints
+);
 
-@include _assert-ascending($grid-breakpoints, "$grid-breakpoints");
-@include _assert-starts-at-zero($grid-breakpoints, "$grid-breakpoints");
-
-
-// Grid containers
-//
-// Define the maximum width of `.container` for different screen sizes.
-
-// scss-docs-start container-max-widths
 $container-max-widths: (
   sm: 540px,
   md: 720px,
   lg: 960px,
   xl: 1140px,
   xxl: 1320px
-) !default;
-// scss-docs-end container-max-widths
+);
 
-@include _assert-ascending($container-max-widths, "$container-max-widths");
-
-
-// Grid columns
-//
-// Set the number of columns and specify the width of the gutters.
-
-$grid-columns:                12 !default;
-$grid-gutter-width:           1.5rem !default;
-$grid-row-columns:            6 !default;
-$gutters: $spacers !default;
-
-// Container padding
-
-$container-padding-x: $grid-gutter-width !default;
-
-// Only use the utilities we need
-// stylelint-disable-next-line scss/dollar-variable-default
-$utilities: () !default;
-
-// Components
-//
-// Define common padding and border radius sizes and more.
-
-// scss-docs-start border-variables
-$border-width:                1px !default;
-$border-style:                solid !default;
-$border-color:                #dee2e6 !default;
-$border-color-translucent:    rgba($black, .175) !default;
-// scss-docs-end border-variables
-
-// scss-docs-start border-radius-variables
-$border-radius:               .375rem !default;
-$border-radius-sm:            .25rem !default;
-$border-radius-lg:            .5rem !default;
-$border-radius-xl:            1rem !default;
-$border-radius-xxl:           2rem !default;
-$border-radius-pill:          50rem !default;
-// scss-docs-end border-radius-variables
-
-// scss-docs-start box-shadow-variables
-$box-shadow:                  0 .5rem 1rem rgba($black, .15) !default;
-$box-shadow-sm:               0 .125rem .25rem rgba($black, .075) !default;
-$box-shadow-lg:               0 1rem 3rem rgba($black, .175) !default;
-$box-shadow-inset:            inset 0 1px 2px rgba($black, .075) !default;
-// scss-docs-end box-shadow-variables
-
-// scss-docs-start focus-ring-variables
-$focus-ring-width:      .25rem !default;
-$focus-ring-opacity:    .25 !default;
-$focus-ring-color:      rgba($primary, $focus-ring-opacity) !default;
-
-// stylelint-disable function-disallowed-list
-// scss-docs-start aspect-ratios
-$aspect-ratios: (
-  "1x1": 100%,
-  "4x3": calc(3 / 4 * 100%),
-  "16x9": calc(9 / 16 * 100%),
-  "21x9": calc(9 / 21 * 100%)
-) !default;
-// scss-docs-end aspect-ratios
-// stylelint-enable function-disallowed-list
+$grid-columns:                12;
+$grid-gutter-width:           $spacer;
+$grid-row-columns:            6;
+$gutters: $spacers;
 
 // Typography
 //
@@ -249,24 +53,30 @@ $aspect-ratios: (
 
 // scss-docs-start font-variables
 // stylelint-disable value-keyword-case
-$font-family-sans-serif:      system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !default;
-$font-family-monospace:       SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !default;
+$font-family-sans-serif:      system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+$font-family-monospace:       "Source Code Pro", "Courier New", monospace;
 // stylelint-enable value-keyword-case
-$font-family-base:            var(--#{$prefix}font-sans-serif) !default;
-$font-family-code:            var(--#{$prefix}font-monospace) !default;
+$font-family-base:            var(--#{$prefix}font-sans-serif);
+$font-family-code:            var(--#{$prefix}font-monospace);
 
 // $font-size-root affects the value of `rem`, which is used for as well font sizes, paddings, and margins
 // $font-size-base affects the font size of the body text
-$font-size-root:              null !default;
-$font-size-base:              1rem !default; // Assumes the browser default, typically `16px`
+$font-size-root:              null;
+$font-size-base:              1rem; // Assumes the browser default, typically `16px`
+$font-size-sm:                $font-size-base * .875 !default;
+$font-size-lg:                $font-size-base * 1.25 !default;
 
+$font-weight-lighter:         200 !default;
+$font-weight-light:           300 !default;
 $font-weight-normal:          400 !default;
+$font-weight-medium:          500 !default;
+$font-weight-semibold:        600 !default;
 $font-weight-bold:            700 !default;
-$font-weight-bolder:          bolder !default;
+$font-weight-bolder:          900 !default;
 
-$font-weight-base:            $font-weight-normal !default;
+$font-weight-base:            $font-weight-normal;
 
-$line-height-base:            1.5 !default;
+$line-height-base:            1.5;
 
 $h1-font-size:                $font-size-base * 2.451 !default;
 $h2-font-size:                $font-size-base * 2.018 !default;
@@ -277,86 +87,33 @@ $h6-font-size:                $font-size-base !default;
 // scss-docs-end font-variables
 
 // scss-docs-start headings-variables
-$headings-margin-bottom:      $spacer * .5 !default;
-$headings-font-family:        null !default;
-$headings-font-style:         null !default;
-$headings-font-weight:        600 !default;
-$headings-line-height:        1.2 !default;
-$headings-color:              inherit !default;
+$headings-margin-bottom:      $spacer;
+$headings-font-family:        null;
+$headings-font-style:         null;
+$headings-font-weight:        600;
+$headings-line-height:        1.2;
+$headings-color:              inherit;
 // scss-docs-end headings-variables
 
 // scss-docs-start type-variables
-$small-font-size:             .875em !default;
+$small-font-size:             .875em;
 
-$sub-sup-font-size:           .75em !default;
+$sub-sup-font-size:           .75em;
 
-$hr-margin-y:                 $spacer !default;
-$hr-color:                    inherit !default;
+$hr-margin-y:                 $spacer;
+$hr-color:                    inherit;
 
-$hr-border-color:             null !default; // Allows for inherited colors
-$hr-border-width:             var(--#{$prefix}border-width) !default;
-$hr-opacity:                  .25 !default;
+$hr-border-color:             null; // Allows for inherited colors
+$hr-border-width:             var(--#{$prefix}border-width);
+$hr-opacity:                  .25;
 
-$legend-margin-bottom:        .5rem !default;
-$legend-font-size:            1.5rem !default;
-$legend-font-weight:          null !default;
+$legend-margin-bottom:        .5rem;
+$legend-font-size:            1.5rem;
+$legend-font-weight:          null;
 
-$dt-font-weight:              $font-weight-bold !default;
+$dt-font-weight:              $font-weight-bold;
 
-$mark-padding:                .1875em !default;
-$mark-bg:                     tint-color(#ffc107, 80%) !default;
+$mark-padding:                .1875em;
+$mark-bg:                     tint-color(#ffc107, 80%);
 
 // scss-docs-end type-variables
-// Tables
-//
-// Customizes the `.table` component with basic values, each used across all table variations.
-
-// scss-docs-start table-variables
-$table-cell-padding-y:        .5rem !default;
-
-$table-th-font-weight:        null !default;
-
-$table-caption-color:         var(--#{$prefix}secondary-color) !default;
-// scss-docs-end table-variables
-
-
-
-// Form validation
-
-// scss-docs-start form-feedback-variables
-$form-feedback-valid-color:         $success !default;
-$form-feedback-invalid-color:       $danger !default;
-// scss-docs-end form-feedback-variables
-
-// scss-docs-start form-validation-colors
-$form-valid-color:                  $form-feedback-valid-color !default;
-$form-valid-border-color:           $form-feedback-valid-color !default;
-$form-invalid-color:                $form-feedback-invalid-color !default;
-$form-invalid-border-color:         $form-feedback-invalid-color !default;
-// scss-docs-end form-validation-colors
-
-
-// Z-index master list
-//
-// Warning: Avoid customizing these values. They're used for a bird's eye view
-// of components dependent on the z-axis and are designed to all work together.
-
-// scss-docs-start zindex-stack
-$zindex-sticky:                     1020 !default;
-$zindex-fixed:                      1030 !default;
-// scss-docs-end zindex-stack
-
-
-// Code
-
-$code-font-size:                    $small-font-size !default;
-$code-color:                        #d63384 !default;
-
-$kbd-padding-y:                     .1875rem !default;
-$kbd-padding-x:                     .375rem !default;
-$kbd-font-size:                     $code-font-size !default;
-$kbd-color:                         var(--#{$prefix}body-bg) !default;
-$kbd-bg:                            var(--#{$prefix}body-color) !default;
-$nested-kbd-font-weight:            null !default; // Deprecated in v5.2.0, removing in v6
-
-$pre-color:                         null !default;
