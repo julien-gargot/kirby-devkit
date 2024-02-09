@@ -1,7 +1,7 @@
 /*
 
 ---------------------------------------
-User settings for GUlp
+User settings for Gulp
 ---------------------------------------
 
 */
@@ -11,7 +11,7 @@ User settings for GUlp
  */
 module.exports.pluginScripts = [
   'node_modules/@popperjs/core/dist/umd/popper.js',
-  'node_modules/bootstrap/dist/js/bootstrap.js'
+  'node_modules/bootstrap/dist/js/bootstrap.js',
 ];
 
 /* List all the Styles plugin files you are using in `pluginStyles`
@@ -24,18 +24,18 @@ module.exports.pluginStyles = [
  * their order of concatenation.
  */
 module.exports.userScripts = [
-  'assets/js/main.js'
+  'assets/src/js/main.js'
 ];
 
-/* Name your LESS config file to load.
- * Managing more than one LESS/CSS should be from @imports in LESS.
+/* Name your SCSS config file to load.
+ * Managing more than one SCSS/CSS should be from @imports in SCSS.
  */
 module.exports.userStyles = [
-  'assets/scss/main.scss'
+  'assets/src/scss/main.scss'
 ];
 
-/* To enable automatic reloading on .js and .less files compilation,
+/* To enable automatic reloading on .js and .scss files compilation,
  * as well as other niceties from [browser sync](https://www.browsersync.io/)
  * write your local dev url in the localDevUrl variable.
  */
-module.exports.localDevUrl = '';
+module.exports.localDevUrl = 'http://dev.example.com/';

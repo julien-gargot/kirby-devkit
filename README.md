@@ -20,23 +20,26 @@ You will need Npm and GIT (for the Kirby submodules) to use this project.
   npm ci
   ```
 
-3. to compile all files, for **development** and **production** :
+## Configure your server and site settings
+
+1. rename the file in `site/config/config.localhost.php` to your local development site URL [check out Multi-environment setup](https://getkirby.com/docs/guide/configuration#multi-environment-setup). The `environment` variable is used to load minified or unminified CSS/JS versions (checkout `snippets/header.php` and `snippets/footer.php`).
+
+2. setup your localDevUrl in `assets/manifest.js` to be able to use live reload (see Compile Assets).
+
+## Compile Assets
+
+1. to compile all files, for **development** and **production** :
   ```
   gulp
   ```
 
-  To make it faster, while developing, you can watch for changes to CSS and JS files in the assets folder. This task only compiles **development** files.
+2. To make it faster, while developing, you can watch for changes to CSS and JS files in the assets folder. This task only compiles **development** files.
   ```
-  gulp dev-watch
+  gulp watch
+  ```
+  for dev purpose you can also use:
+  ```
+  gulp watch --no-purge
   ```
 
-  ~Same as `gulp dev-watch` with live reload.~ _Not tested after gulp update (7/24/23)_
-  ```
-  #gulp dev-watch-sync
-  ```
-~~~
-
-## Configure with your server/site settings
-
-1. rename the file in `site/config/config.localhost.php` to your local development site URL [check out Multi-environment setup](http://getkirby.com/docs/advanced/options). The `environment` variable is used to load minified or unminified CSS/JS versions (checkout `snippets/header.php` and `snippets/footer.php`).
-2. to be able to use browser sync (live reloading, remote debugging, and a few other nice features), set the `localDevUrl` variable to the URL of your site at the top of `gulpfile.js`.
+**NB** *As a CSS purge is configured globally by default, if you want to save particular class (created by JS, load from external API, etc.), the easiest way is to create a `site/snippets/purge.php` with your custom HTML.*
