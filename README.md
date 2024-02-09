@@ -1,6 +1,6 @@
-# Kirby Dev Kit v3
+# Kirby Dev Kit v4
 
-This repo is a starting point to use Kirby 3 with Gulp and Npm. It is made for developers to bootstrap their own projects quickly.
+This repo is a starting point to use Kirby 4 with Gulp and Npm and a minimal Bootstrap 5. It is made for developers to bootstrap their own projects quickly.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ You will need Npm and GIT (for the Kirby submodules) to use this project.
 
 1. clone this repo :
   ```
-  git clone -b v3 https://github.com/julien-gargot/kirby-devkit.git path/to/your-project
+  git clone https://github.com/julien-gargot/kirby-devkit.git path/to/your-project
   cd path/to/your-project
   git submodule update --init
   ```
